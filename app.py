@@ -58,27 +58,60 @@ def moeda_br(v):
     except Exception:
         return "R$ 0,00"
 
-def converter_montante(serie):
+def converter_valor_brasileiro(valor):
     """
-    Converte valores monetários brasileiros com segurança.
+    Trata corretamente:
+    - números já numéricos do Excel: 291.77 -> 291.77
+    - texto BR: '291,77' -> 291.77
+    - texto BR com milhar: '29.177,00' -> 29177.00
+    - texto US simples: '291.77' -> 291.77
+    """
+    if pd.isna(valor):
+        return None
 
-    Exemplos aceitos:
-    291,77      -> 291.77
-    1.291,77    -> 1291.77
-    29.177,00   -> 29177.00
-    R$ 291,77   -> 291.77
-    """
-    serie = (
-        serie.astype(str)
-        .str.replace("R$", "", regex=False)
-        .str.replace("\xa0", "", regex=False)
-        .str.replace(" ", "", regex=False)
-        .str.replace(".", "", regex=False)
-        .str.replace(",", ".", regex=False)
-        .str.strip()
-        .replace({"": None, "nan": None, "None": None})
-    )
-    return pd.to_numeric(serie, errors="coerce")
+    # Se já veio como número do Excel/pandas, não mexe
+    if isinstance(valor, (int, float)) and not isinstance(valor, bool):
+        return float(valor)
+
+    s = str(valor).strip()
+    if s == "" or s.lower() in {"nan", "none"}:
+        return None
+
+    s = s.replace("R$", "").replace("\xa0", "").replace(" ", "")
+
+    # Caso 1: tem ponto e vírgula -> padrão brasileiro com milhar
+    if "." in s and "," in s:
+        s = s.replace(".", "").replace(",", ".")
+        try:
+            return float(s)
+        except Exception:
+            return None
+
+    # Caso 2: só vírgula -> decimal brasileiro
+    if "," in s:
+        s = s.replace(",", ".")
+        try:
+            return float(s)
+        except Exception:
+            return None
+
+    # Caso 3: só ponto
+    # Se tiver mais de um ponto, provavelmente eram milhares
+    if s.count(".") > 1:
+        s = s.replace(".", "")
+        try:
+            return float(s)
+        except Exception:
+            return None
+
+    # Se tem um ponto só, assume decimal normal
+    try:
+        return float(s)
+    except Exception:
+        return None
+
+def converter_montante(serie):
+    return serie.apply(converter_valor_brasileiro)
 
 def achar_data_sugerida(bruto):
     linhas_validas = bruto.dropna(how="all").reset_index(drop=True)
