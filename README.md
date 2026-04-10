@@ -1,8 +1,6 @@
 
-# Gestão de Vencidos V4
+# Gestão de Vencidos V5
 
-## Ajustes desta versão
-- removido campo valor mínimo
-- removidos botões rápidos de filtro
-- cards agora recalculam conforme o filtro aplicado
-- valor vencido agora acompanha o filtro selecionado
+Ajuste:
+- agora lê arquivos com a primeira linha em branco
+- continua encontrando o cabeçalho automaticamente

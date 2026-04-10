@@ -50,7 +50,7 @@ COLUNAS_DESEJADAS = {
 def normalizar_texto(x):
     if pd.isna(x):
         return ""
-    return str(x).replace("\\n", " ").replace("\\r", " ").strip()
+    return str(x).replace("\n", " ").replace("\r", " ").strip()
 
 def moeda_br(v):
     try:
@@ -70,9 +70,11 @@ def converter_montante(serie):
     )
 
 def achar_data_sugerida(bruto):
-    for i in range(min(8, len(bruto))):
-        for j in range(min(8, bruto.shape[1])):
-            valor = bruto.iat[i, j]
+    # ignora linhas totalmente vazias no topo
+    linhas_validas = bruto.dropna(how="all").reset_index(drop=True)
+    for i in range(min(8, len(linhas_validas))):
+        for j in range(min(8, linhas_validas.shape[1])):
+            valor = linhas_validas.iat[i, j]
             if pd.isna(valor):
                 continue
             try:
@@ -84,8 +86,12 @@ def achar_data_sugerida(bruto):
     return date.today()
 
 def achar_cabecalho(bruto):
-    for i in range(min(20, len(bruto))):
-        linha = [normalizar_texto(x) for x in bruto.iloc[i].tolist()]
+    # percorre várias linhas e ignora linhas vazias
+    for i in range(min(30, len(bruto))):
+        linha_bruta = bruto.iloc[i]
+        if linha_bruta.isna().all():
+            continue
+        linha = [normalizar_texto(x) for x in linha_bruta.tolist()]
         tem_cliente = "Cliente" in linha
         tem_nome = "Nome" in linha
         tem_doc = "N doc." in linha or "N doc" in linha
@@ -98,11 +104,20 @@ def achar_cabecalho(bruto):
 def ler_arquivo(uploaded_file):
     nome = uploaded_file.name.lower()
     if nome.endswith(".csv"):
-        bruto = pd.read_csv(uploaded_file, sep=";", encoding="utf-16-le", header=None)
+        # tenta primeiro utf-16-le; se falhar, latin-1
+        try:
+            bruto = pd.read_csv(uploaded_file, sep=";", encoding="utf-16-le", header=None)
+        except Exception:
+            uploaded_file.seek(0)
+            bruto = pd.read_csv(uploaded_file, sep=";", encoding="latin-1", header=None)
         origem = "CSV"
     else:
         bruto = pd.read_excel(uploaded_file, header=None)
         origem = "Excel"
+
+    # remove apenas linhas completamente vazias do topo para facilitar a leitura
+    while len(bruto) > 0 and bruto.iloc[0].isna().all():
+        bruto = bruto.iloc[1:].reset_index(drop=True)
 
     data_sugerida = achar_data_sugerida(bruto)
     header_idx = achar_cabecalho(bruto)
