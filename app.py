@@ -59,18 +59,28 @@ def moeda_br(v):
         return "R$ 0,00"
 
 def converter_montante(serie):
-    return (
+    """
+    Converte valores monetários brasileiros com segurança.
+
+    Exemplos aceitos:
+    291,77      -> 291.77
+    1.291,77    -> 1291.77
+    29.177,00   -> 29177.00
+    R$ 291,77   -> 291.77
+    """
+    serie = (
         serie.astype(str)
+        .str.replace("R$", "", regex=False)
+        .str.replace("\xa0", "", regex=False)
+        .str.replace(" ", "", regex=False)
         .str.replace(".", "", regex=False)
         .str.replace(",", ".", regex=False)
-        .str.replace("R$", "", regex=False)
         .str.strip()
-        .replace({"": None, "nan": None})
-        .astype(float)
+        .replace({"": None, "nan": None, "None": None})
     )
+    return pd.to_numeric(serie, errors="coerce")
 
 def achar_data_sugerida(bruto):
-    # ignora linhas totalmente vazias no topo
     linhas_validas = bruto.dropna(how="all").reset_index(drop=True)
     for i in range(min(8, len(linhas_validas))):
         for j in range(min(8, linhas_validas.shape[1])):
@@ -86,7 +96,6 @@ def achar_data_sugerida(bruto):
     return date.today()
 
 def achar_cabecalho(bruto):
-    # percorre várias linhas e ignora linhas vazias
     for i in range(min(30, len(bruto))):
         linha_bruta = bruto.iloc[i]
         if linha_bruta.isna().all():
@@ -104,7 +113,6 @@ def achar_cabecalho(bruto):
 def ler_arquivo(uploaded_file):
     nome = uploaded_file.name.lower()
     if nome.endswith(".csv"):
-        # tenta primeiro utf-16-le; se falhar, latin-1
         try:
             bruto = pd.read_csv(uploaded_file, sep=";", encoding="utf-16-le", header=None)
         except Exception:
@@ -115,7 +123,6 @@ def ler_arquivo(uploaded_file):
         bruto = pd.read_excel(uploaded_file, header=None)
         origem = "Excel"
 
-    # remove apenas linhas completamente vazias do topo para facilitar a leitura
     while len(bruto) > 0 and bruto.iloc[0].isna().all():
         bruto = bruto.iloc[1:].reset_index(drop=True)
 

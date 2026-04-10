@@ -1,6 +1,7 @@
 
-# Gestão de Vencidos V5
+# Gestão de Vencidos V6
 
-Ajuste:
-- agora lê arquivos com a primeira linha em branco
-- continua encontrando o cabeçalho automaticamente
+Ajustes desta versão:
+- correção definitiva da coluna Montante
+- agora interpreta corretamente moeda brasileira
+- corrige cards, tabela, resumo e exportação
