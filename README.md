@@ -1,8 +1,7 @@
-# Gestão de Vencidos V11.5
+# Cobrança Inteligente V11.7
 
-Ajustes:
-- versão refeita após falha da V11.4
-- topo compacto
-- botões mais objetivos
-- cards mantidos
-- tabela colorida
+Correções:
+- corrigido erro de sintaxe da V11.6
+- seleção múltipla nos botões
+- nome aplicado no topo
+- layout profissional mantido
