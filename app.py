@@ -335,8 +335,6 @@ div[data-testid="stHorizontalBlock"] .stButton > button {
     font-size: 11px !important;
     padding: 2px 6px !important;
 }
-
-.stSlider { margin-top: 0.1rem; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -348,8 +346,6 @@ if "busca_v121" not in st.session_state:
     st.session_state["busca_v121"] = ""
 if "nao_cobrados_v121" not in st.session_state:
     st.session_state["nao_cobrados_v121"] = False
-if "altura_checklist_v13" not in st.session_state:
-    st.session_state["altura_checklist_v13"] = 360
 
 st.markdown('<div class="header-title">🧾 Cobrança Inteligente</div>', unsafe_allow_html=True)
 st.markdown('<div class="header-sub">Veja. Decida. Cobre.</div>', unsafe_allow_html=True)
@@ -456,23 +452,10 @@ with m2:
 with m3:
     st.markdown(f'<div class="metric-card"><div class="metric-label">Valor total</div><div class="metric-value">{moeda_br(filtrado["Montante"].sum())}</div></div>', unsafe_allow_html=True)
 
-left, right = st.columns([1.55, 0.95])
+left, right = st.columns([1.25, 1.25])
 
 with left:
-    h1, h2 = st.columns([1.5, 0.9])
-    with h1:
-        st.markdown("### Checklist de cobrança")
-    with h2:
-        altura_checklist = st.slider(
-            "Altura do checklist",
-            min_value=220,
-            max_value=700,
-            value=st.session_state["altura_checklist_v13"],
-            step=20,
-            key="slider_altura_checklist_v13"
-        )
-        st.session_state["altura_checklist_v13"] = altura_checklist
-
+    st.markdown("### Checklist de cobrança")
     checklist = filtrado_clientes.sort_values(["Maior_Dias", "Valor_total"], ascending=[False, False]).copy()
     checklist_view = checklist[["Cliente", "Nome", "Qtd_Titulos", "Valor_total", "Maior_Dias", "Faixa_Principal", "Situação Manual"]].copy()
     checklist_view["Valor_total"] = checklist_view["Valor_total"].map(moeda_br)
@@ -482,7 +465,7 @@ with left:
         hide_index=True,
         use_container_width=True,
         num_rows="fixed",
-        height=st.session_state["altura_checklist_v13"],
+        height=360,
         disabled=["Cliente", "Nome", "Qtd_Titulos", "Valor_total", "Maior_Dias", "Faixa_Principal"],
         column_config={
             "Qtd_Titulos": st.column_config.NumberColumn("Qtd. títulos"),

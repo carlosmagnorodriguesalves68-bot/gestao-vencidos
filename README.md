@@ -1,2 +1,6 @@
-V13 - controle manual da altura do quadro Checklist de cobrança.
-Agora o usuário pode ajustar o tamanho do quadro pelo próprio app.
+# Cobrança Inteligente V13.1
+
+Ajuste aplicado:
+- redução da largura do quadro Checklist de cobrança
+- sem controle manual
+- sem alterar conteúdo
