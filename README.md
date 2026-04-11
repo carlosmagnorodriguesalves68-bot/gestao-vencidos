@@ -1,9 +1,8 @@
-# Gestão de Vencidos V11
+# Gestão de Vencidos V11.2
 
-Versão estável com:
+Versão estável sem ranking, com:
 - leitura robusta de CSV e Excel
-- cards por faixa de atraso
-- seleção múltipla das faixas
-- ranking 'Quem cobrar agora'
+- botões de faixa de atraso
 - checklist por cliente
 - gerador de mensagem por cliente
+- tabela final estável
