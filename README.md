@@ -1,9 +1,7 @@
-# Cobrança Inteligente V12
+# Cobrança Inteligente V12.1
 
-Versão completa com:
-- seleção múltipla dos botões
-- nenhum botão selecionado por padrão
-- botão pequeno de limpar filtro
-- nome aplicado no topo
-- cards mantidos
-- checklist, mensagem e tabela colorida
+Melhorias:
+- mensagens profissionais automáticas por faixa
+- título superior com mais espaço
+- última tabela renomeada para Lista detalhada
+- mantém múltipla seleção, checklist e tabela colorida
