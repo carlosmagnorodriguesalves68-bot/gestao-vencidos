@@ -338,6 +338,20 @@ div[data-testid="stHorizontalBlock"] .stButton > button {
 </style>
 """, unsafe_allow_html=True)
 
+
+st.markdown("""
+<style>
+div[data-testid="stCodeBlock"] pre, div[data-testid="stCodeBlock"] code {
+    font-size: 10px !important;
+    line-height: 1.15 !important;
+}
+div[data-testid="stCodeBlock"] {
+    max-height: 260px !important;
+    overflow-y: auto !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 if "faixas_sel_v121" not in st.session_state:
     st.session_state["faixas_sel_v121"] = []
 if "status_manual_v121" not in st.session_state:
@@ -503,13 +517,7 @@ with right:
         )
         cliente_sel = str(clientes_msg.loc[idx, "Cliente"])
         df_cliente = filtrado[filtrado["Cliente"].astype(str) == cliente_sel].copy()
-        st.text_area(
-            "Mensagem",
-            value=gerar_mensagem_cliente(df_cliente),
-            height=220,
-            disabled=True,
-            label_visibility="collapsed"
-        )
+        st.code(gerar_mensagem_cliente(df_cliente), language=None)
         st.caption("Copie e envie no WhatsApp.")
 
 st.markdown("### Lista detalhada")

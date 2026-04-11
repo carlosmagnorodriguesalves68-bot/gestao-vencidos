@@ -1,1 +1,1 @@
-V12.5 - ajuste do quadro de mensagem com text_area menor e estável
+V12.6 - reduz apenas o quadro da mensagem e mantém o botão de copiar
