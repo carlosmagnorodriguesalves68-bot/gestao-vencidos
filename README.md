@@ -1,1 +1,1 @@
-V14.1 - reforço visual das faixas no checklist com identificação colorida semelhante à Lista detalhada.
+V14.2 - restaura autosize do checklist e melhora a estabilidade da Situação Manual.

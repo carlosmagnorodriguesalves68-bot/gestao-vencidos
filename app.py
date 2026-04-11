@@ -449,7 +449,9 @@ with atalho_cols[0]:
             st.session_state["faixas_sel_v121"] = []
         else:
             st.session_state["faixas_sel_v121"] = faixas_bloqueados
-        st.session_state.pop("editor_checklist_v14", None)
+        for _k in list(st.session_state.keys()):
+            if str(_k).startswith("editor_checklist_v14"):
+                st.session_state.pop(_k, None)
         st.rerun()
 
 with atalho_cols[1]:
@@ -460,7 +462,9 @@ with atalho_cols[1]:
             st.session_state["faixas_sel_v121"] = []
         else:
             st.session_state["faixas_sel_v121"] = faixas_risco
-        st.session_state.pop("editor_checklist_v14", None)
+        for _k in list(st.session_state.keys()):
+            if str(_k).startswith("editor_checklist_v14"):
+                st.session_state.pop(_k, None)
         st.rerun()
 
 with atalho_cols[2]:
@@ -468,7 +472,9 @@ with atalho_cols[2]:
         st.session_state["faixas_sel_v121"] = []
         st.session_state["busca_v121"] = ""
         st.session_state["nao_cobrados_v121"] = False
-        st.session_state.pop("editor_checklist_v14", None)
+        for _k in list(st.session_state.keys()):
+            if str(_k).startswith("editor_checklist_v14"):
+                st.session_state.pop(_k, None)
         for _cliente in df["Cliente"].astype(str).unique():
             st.session_state["status_manual_v121"][_cliente] = "Não cobrado"
         st.rerun()
@@ -487,7 +493,9 @@ for i, (nome, _ini, _fim, legenda, acao) in enumerate(FAIXAS):
             else:
                 selecionadas.append(nome)
             st.session_state["faixas_sel_v121"] = selecionadas
-            st.session_state.pop("editor_checklist_v14", None)
+            for _k in list(st.session_state.keys()):
+            if str(_k).startswith("editor_checklist_v14"):
+                st.session_state.pop(_k, None)
             st.rerun()
         st.markdown(f'<div class="legend-mini">{legenda}</div>', unsafe_allow_html=True)
 
@@ -528,6 +536,9 @@ with left:
     checklist_view["Valor_total"] = checklist_view["Valor_total"].map(moeda_br)
     checklist_view["Faixa_Principal"] = checklist_view["Faixa_Principal"].map(lambda x: FAIXA_DISPLAY.get(x, x))
 
+    checklist_clientes_key = "_".join(checklist_view["Cliente"].astype(str).tolist())
+    editor_key = f"editor_checklist_v142_{abs(hash(checklist_clientes_key))}"
+
     edited = st.data_editor(
         checklist_view,
         hide_index=True,
@@ -536,23 +547,25 @@ with left:
         height=360,
         disabled=["Cliente", "Nome", "Qtd_Titulos", "Valor_total", "Maior_Dias", "Faixa_Principal"],
         column_config={
-            "Qtd_Titulos": st.column_config.NumberColumn("Qtd. títulos", width="small"),
-            "Valor_total": st.column_config.TextColumn("Montante total", width="medium"),
-            "Maior_Dias": st.column_config.NumberColumn("Maior atraso", width="small"),
-            "Faixa_Principal": st.column_config.TextColumn("Faixa", width="medium"),
+            "Qtd_Titulos": st.column_config.NumberColumn("Qtd. títulos"),
+            "Valor_total": st.column_config.TextColumn("Montante total"),
+            "Maior_Dias": st.column_config.NumberColumn("Maior atraso"),
+            "Faixa_Principal": st.column_config.TextColumn("Faixa"),
             "Situação Manual": st.column_config.SelectboxColumn(
                 "Situação Manual",
                 options=SITUACOES_MANUAIS,
                 required=True,
-                width="small",
             ),
         },
-        key="editor_checklist_v14"
+        key=editor_key
     )
 
-    if edited is not None:
+    if edited is not None and "Situação Manual" in edited.columns:
         for _, row in edited.iterrows():
-            st.session_state["status_manual_v121"][str(row["Cliente"])] = row["Situação Manual"]
+            cliente_id = str(row["Cliente"])
+            novo_status = row["Situação Manual"]
+            if cliente_id in st.session_state["status_manual_v121"]:
+                st.session_state["status_manual_v121"][cliente_id] = novo_status
 
     filtrado["Situação Manual"] = filtrado["Cliente"].astype(str).map(st.session_state["status_manual_v121"])
 
