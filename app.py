@@ -503,11 +503,13 @@ with right:
         )
         cliente_sel = str(clientes_msg.loc[idx, "Cliente"])
         df_cliente = filtrado[filtrado["Cliente"].astype(str) == cliente_sel].copy()
-        st.markdown('<style>
-code {font-size: 10px !important; line-height: 1.15 !important;}
-div[data-testid="stCodeBlock"] {max-height: 260px !important; overflow-y: auto;}
-</style>', unsafe_allow_html=True)
-        st.code(gerar_mensagem_cliente(df_cliente), language=None)
+        st.text_area(
+            "Mensagem",
+            value=gerar_mensagem_cliente(df_cliente),
+            height=220,
+            disabled=True,
+            label_visibility="collapsed"
+        )
         st.caption("Copie e envie no WhatsApp.")
 
 st.markdown("### Lista detalhada")

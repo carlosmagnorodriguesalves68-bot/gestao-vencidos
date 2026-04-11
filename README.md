@@ -1,1 +1,1 @@
-V12.4 - ajuste mais compacto mensagem
+V12.5 - ajuste do quadro de mensagem com text_area menor e estável
