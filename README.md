@@ -1,8 +1,6 @@
-# Gestão de Vencidos V11.2
+# Gestão de Vencidos V11.3
 
-Versão estável sem ranking, com:
-- leitura robusta de CSV e Excel
-- botões de faixa de atraso
-- checklist por cliente
-- gerador de mensagem por cliente
-- tabela final estável
+Ajustes:
+- botões de faixa compactos em uma linha
+- tabela final mantém cores
+- layout mais enxuto

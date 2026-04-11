@@ -4,18 +4,26 @@ from io import StringIO, BytesIO
 import pandas as pd
 import streamlit as st
 
-st.set_page_config(page_title="Gestão de Vencidos V11.2", layout="wide")
+st.set_page_config(page_title="Gestão de Vencidos V11.3", layout="wide")
 
 FAIXAS = [
-    ("Recuperação de Perda", 31, 999999, "Acima de 30 dias"),
-    ("Protesto Iminente", 12, 30, "12 a 30 dias"),
-    ("Radar de Perda", 9, 11, "9 a 11 dias"),
-    ("Bloqueio", 5, 8, "5 a 8 dias"),
-    ("Risco", 3, 4, "3 a 4 dias"),
-    ("Aguardando Baixa", -999999, 2, "Até 2 dias"),
+    ("Recuperação de Perda", 31, 999999, "30+d"),
+    ("Protesto Iminente", 12, 30, "12-30d"),
+    ("Radar de Perda", 9, 11, "9-11d"),
+    ("Bloqueio", 5, 8, "5-8d"),
+    ("Risco", 3, 4, "3-4d"),
+    ("Aguardando Baixa", -999999, 2, "0-2d"),
 ]
-FAIXA_ORDEM = {nome: i + 1 for i, (nome, *_r) in enumerate(FAIXAS)}
 FAIXA_LABEL = {nome: desc for nome, _a, _b, desc in FAIXAS}
+
+FAIXA_CORES = {
+    "Recuperação de Perda": {"bg": "#E5E7EB", "text": "#111827"},
+    "Protesto Iminente": {"bg": "#FEE2E2", "text": "#991B1B"},
+    "Radar de Perda": {"bg": "#FEF3C7", "text": "#92400E"},
+    "Bloqueio": {"bg": "#FFEDD5", "text": "#9A3412"},
+    "Risco": {"bg": "#DBEAFE", "text": "#1D4ED8"},
+    "Aguardando Baixa": {"bg": "#E0E7FF", "text": "#3730A3"},
+}
 
 SITUACOES_MANUAIS = ["Não cobrado", "Cobrado hoje", "Aguardando retorno", "Resolvido"]
 
@@ -50,20 +58,16 @@ def converter_valor_brasileiro(valor):
         return None
     if isinstance(valor, (int, float)) and not isinstance(valor, bool):
         return float(valor)
-
     s = str(valor).strip()
     if s == "" or s.lower() in {"nan", "none"}:
         return None
-
     s = s.replace("R$", "").replace("\xa0", "").replace(" ", "")
-
     if "." in s and "," in s:
         s = s.replace(".", "").replace(",", ".")
     elif "," in s:
         s = s.replace(",", ".")
     elif s.count(".") > 1:
         s = s.replace(".", "")
-
     try:
         return float(s)
     except Exception:
@@ -97,13 +101,9 @@ def ler_csv_bruto(uploaded_file):
 
 def achar_cabecalho(bruto):
     for i in range(min(40, len(bruto))):
-        linha_bruta = bruto.iloc[i]
-        if linha_bruta.isna().all():
-            continue
-        linha = [normalizar_texto(x) for x in linha_bruta.tolist()]
+        linha = [normalizar_texto(x) for x in bruto.iloc[i].tolist()]
         if (
-            "Cliente" in linha and
-            "Nome" in linha and
+            "Cliente" in linha and "Nome" in linha and
             ("N doc." in linha or "N doc" in linha) and
             ("Venc.Liq." in linha or "Venc Liq" in linha) and
             "Montante" in linha
@@ -118,35 +118,23 @@ def ler_arquivo(uploaded_file):
     else:
         bruto = pd.read_excel(BytesIO(uploaded_file.getvalue()), header=None)
         origem = "Excel"
-
     while len(bruto) > 0 and bruto.iloc[0].isna().all():
         bruto = bruto.iloc[1:].reset_index(drop=True)
-
     header_idx = achar_cabecalho(bruto)
     if header_idx is None:
         raise ValueError("Não encontrei a linha do cabeçalho automaticamente.")
-
     cab = [normalizar_texto(x) for x in bruto.iloc[header_idx].tolist()]
     df = bruto.iloc[header_idx + 1 :].copy()
     df.columns = cab
     df = df.dropna(how="all", axis=0).dropna(how="all", axis=1)
-
     manter = {}
     for col in df.columns:
         nome_col = normalizar_texto(col)
         if nome_col in COLUNAS_DESEJADAS:
             manter[col] = COLUNAS_DESEJADAS[nome_col]
-
     df = df[list(manter.keys())].rename(columns=manter)
-
-    obrigatorias = ["Cliente", "Nome", "N doc", "Referência", "Tipo", "Data Doc", "Venc Liq", "Montante"]
-    faltando = [c for c in obrigatorias if c not in df.columns]
-    if faltando:
-        raise ValueError("Faltam colunas obrigatórias: " + ", ".join(faltando))
-
     for col in ["Cliente", "Nome", "N doc", "Referência", "Tipo"]:
         df[col] = df[col].map(normalizar_texto)
-
     df = df[df["Cliente"] != ""].copy()
     df["Data Doc"] = pd.to_datetime(df["Data Doc"], dayfirst=True, errors="coerce")
     df["Venc Liq"] = pd.to_datetime(df["Venc Liq"], dayfirst=True, errors="coerce")
@@ -182,21 +170,25 @@ Fico à disposição."""
 def safe_cols(df, cols):
     return [c for c in cols if c in df.columns]
 
+def estilo_faixa(valor):
+    cfg = FAIXA_CORES.get(valor, {"bg": "#ffffff", "text": "#222222"})
+    return f"background-color: {cfg['bg']}; color: {cfg['text']}; font-weight: 800;"
+
 st.markdown("""
 <style>
 .stApp { background: #f5f7fb; }
-.block-container { padding-top: 0.8rem; padding-bottom: 2rem; max-width: 1500px; }
+.block-container { padding-top: 0.7rem; padding-bottom: 1.5rem; max-width: 1500px; }
 .metric-card {
     background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
     border: 1px solid #e6ebf2;
-    border-radius: 18px;
-    padding: 18px 20px;
+    border-radius: 16px;
+    padding: 16px 18px;
     box-shadow: 0 6px 18px rgba(16,24,40,0.05);
 }
 .metric-label { font-size: 13px; color: #6b7280; margin-bottom: 8px; }
-.metric-value { font-size: 30px; font-weight: 800; color: #0f172a; line-height: 1.1; }
+.metric-value { font-size: 28px; font-weight: 800; color: #0f172a; line-height: 1.1; }
 .section-title { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
-.small-muted { font-size: 13px; color: #6b7280; }
+.small-muted { font-size: 12px; color: #6b7280; }
 div[data-testid="stDataFrame"] {
     border: 1px solid #e6ebf2;
     border-radius: 16px;
@@ -205,35 +197,36 @@ div[data-testid="stDataFrame"] {
 }
 .stButton > button {
     width: 100%;
-    border-radius: 14px;
+    border-radius: 12px;
     border: 1px solid #dbe3ef;
-    padding: 0.75rem 0.9rem;
+    padding: 0.45rem 0.5rem;
     font-weight: 700;
+    min-height: 44px;
+    font-size: 13px;
 }
-.card-legend {
-    font-size: 12px;
-    color: #6b7280;
-    margin-top: -4px;
-    margin-bottom: 10px;
-    text-align: center;
+.legend-line{
+    font-size:11px;
+    color:#6b7280;
+    text-align:center;
+    margin-top:-2px;
+    margin-bottom:8px;
 }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("Gestão de Vencidos V11.2")
-st.caption("Versão sem ranking, com botões de faixa, checklist por cliente e tabela estável.")
+st.title("Gestão de Vencidos V11.3")
+st.caption("Layout mais compacto, botões em uma linha e tabela final colorida.")
 
-if "faixas_sel_v112" not in st.session_state:
-    st.session_state["faixas_sel_v112"] = [f[0] for f in FAIXAS]
-if "busca_v112" not in st.session_state:
-    st.session_state["busca_v112"] = ""
-if "nao_cobrados_v112" not in st.session_state:
-    st.session_state["nao_cobrados_v112"] = False
-if "status_manual_v112" not in st.session_state:
-    st.session_state["status_manual_v112"] = {}
+if "faixas_sel_v113" not in st.session_state:
+    st.session_state["faixas_sel_v113"] = [f[0] for f in FAIXAS]
+if "busca_v113" not in st.session_state:
+    st.session_state["busca_v113"] = ""
+if "nao_cobrados_v113" not in st.session_state:
+    st.session_state["nao_cobrados_v113"] = False
+if "status_manual_v113" not in st.session_state:
+    st.session_state["status_manual_v113"] = {}
 
 arquivo = st.file_uploader("Selecione o arquivo", type=["xlsx", "xls", "csv"])
-
 if arquivo is None:
     st.info("Envie o arquivo para começar.")
     st.stop()
@@ -256,10 +249,10 @@ df["Dias"] = (pd.to_datetime(data_ref) - df["Venc Liq"]).dt.days.astype(int)
 df["Faixa"] = df["Dias"].apply(faixa_por_dias)
 
 for cliente in df["Cliente"].astype(str).unique():
-    if cliente not in st.session_state["status_manual_v112"]:
-        st.session_state["status_manual_v112"][cliente] = "Não cobrado"
+    if cliente not in st.session_state["status_manual_v113"]:
+        st.session_state["status_manual_v113"][cliente] = "Não cobrado"
 
-df["Situação Manual"] = df["Cliente"].astype(str).map(st.session_state["status_manual_v112"])
+df["Situação Manual"] = df["Cliente"].astype(str).map(st.session_state["status_manual_v113"])
 
 clientes_df = (
     df.groupby(["Cliente", "Nome"], as_index=False)
@@ -267,72 +260,64 @@ clientes_df = (
           Qtd_Titulos=("N doc", "count"),
           Valor_total=("Montante", "sum"),
           Maior_Dias=("Dias", "max"),
-          Faixa_Principal=("Faixa", "first"),
+          Faixa_Principal=("Dias", lambda s: faixa_por_dias(max(s))),
           Situação_Manual=("Situação Manual", "first"),
       )
 )
+clientes_df["Situação Manual"] = clientes_df["Cliente"].astype(str).map(st.session_state["status_manual_v113"])
 
-# recalcula faixa principal pelo maior atraso
-clientes_df["Faixa_Principal"] = clientes_df["Maior_Dias"].apply(faixa_por_dias)
-clientes_df["Situação Manual"] = clientes_df["Cliente"].astype(str).map(st.session_state["status_manual_v112"])
-
-# filtros simples
-f1, f2, f3 = st.columns([1.4, 1.0, 0.9])
+# filtros topo compactos
+f1, f2, f3 = st.columns([1.5, 1.0, 0.8])
 with f1:
-    busca = st.text_input("Cliente ou nome", value=st.session_state["busca_v112"])
+    busca = st.text_input("Cliente ou nome", value=st.session_state["busca_v113"])
 with f2:
-    nao_cobrados = st.checkbox("Mostrar só não cobrados", value=st.session_state["nao_cobrados_v112"])
+    nao_cobrados = st.checkbox("Mostrar só não cobrados", value=st.session_state["nao_cobrados_v113"])
 with f3:
     st.write("")
     st.write("")
-    limpar = st.button("Limpar filtros", use_container_width=True)
+    if st.button("Limpar filtros", use_container_width=True):
+        busca = ""
+        nao_cobrados = False
+        st.session_state["faixas_sel_v113"] = [f[0] for f in FAIXAS]
+        st.rerun()
 
-if limpar:
-    busca = ""
-    nao_cobrados = False
-    st.session_state["faixas_sel_v112"] = [f[0] for f in FAIXAS]
+st.session_state["busca_v113"] = busca
+st.session_state["nao_cobrados_v113"] = nao_cobrados
 
-st.session_state["busca_v112"] = busca
-st.session_state["nao_cobrados_v112"] = nao_cobrados
-
-# botões de faixa
+# botões em uma linha
 st.markdown('<div class="section-title">Faixas de atraso</div>', unsafe_allow_html=True)
-btn_cols = st.columns(3)
+btn_cols = st.columns(6)
 for i, (nome, _ini, _fim, desc) in enumerate(FAIXAS):
-    col = btn_cols[i % 3]
     qtd = clientes_df[clientes_df["Faixa_Principal"] == nome]["Cliente"].nunique()
-    ativo = nome in st.session_state["faixas_sel_v112"]
-    label = f"{nome} ({qtd})"
-    with col:
-        if st.button(label, key=f"btn_{i}_{nome}", type="primary" if ativo else "secondary"):
-            atuais = st.session_state["faixas_sel_v112"]
+    ativo = nome in st.session_state["faixas_sel_v113"]
+    with btn_cols[i]:
+        if st.button(f"{nome} ({qtd})", key=f"faixa_btn_v113_{i}", type="primary" if ativo else "secondary"):
+            atuais = st.session_state["faixas_sel_v113"]
             if nome in atuais:
                 atuais.remove(nome)
             else:
                 atuais.append(nome)
             if len(atuais) == 0:
-                st.session_state["faixas_sel_v112"] = [f[0] for f in FAIXAS]
+                st.session_state["faixas_sel_v113"] = [f[0] for f in FAIXAS]
             st.rerun()
-        st.markdown(f'<div class="card-legend">{desc}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="legend-line">{desc}</div>', unsafe_allow_html=True)
 
-faixas_ativas = st.session_state["faixas_sel_v112"]
+faixas_ativas = st.session_state["faixas_sel_v113"]
 
 filtrado_clientes = clientes_df[clientes_df["Faixa_Principal"].isin(faixas_ativas)].copy()
-
 if busca:
     mask = (
         filtrado_clientes["Cliente"].astype(str).str.contains(busca, case=False, na=False) |
         filtrado_clientes["Nome"].astype(str).str.contains(busca, case=False, na=False)
     )
     filtrado_clientes = filtrado_clientes[mask]
-
 if nao_cobrados:
     filtrado_clientes = filtrado_clientes[filtrado_clientes["Situação Manual"] == "Não cobrado"]
 
 clientes_set = set(filtrado_clientes["Cliente"].astype(str).tolist())
 filtrado = df[df["Cliente"].astype(str).isin(clientes_set)].copy()
 
-# cards topo
+# cards executivos
 m1, m2, m3, m4 = st.columns(4)
 with m1:
     st.markdown(f'<div class="metric-card"><div class="metric-label">Clientes filtrados</div><div class="metric-value">{filtrado_clientes["Cliente"].nunique():,}</div></div>', unsafe_allow_html=True)
@@ -348,7 +333,6 @@ left, right = st.columns([1.5, 0.9])
 
 with left:
     st.markdown('<div class="section-title">Checklist de cobrança</div><div class="small-muted">Agrupado por cliente para marcar uma vez só.</div>', unsafe_allow_html=True)
-
     checklist = filtrado_clientes.sort_values(["Maior_Dias", "Valor_total"], ascending=[False, False]).copy()
     checklist_view = checklist[["Cliente", "Nome", "Qtd_Titulos", "Valor_total", "Maior_Dias", "Faixa_Principal", "Situação Manual"]].copy()
     checklist_view["Valor_total"] = checklist_view["Valor_total"].map(moeda_br)
@@ -358,7 +342,7 @@ with left:
         hide_index=True,
         use_container_width=True,
         num_rows="fixed",
-        height=380,
+        height=360,
         disabled=["Cliente", "Nome", "Qtd_Titulos", "Valor_total", "Maior_Dias", "Faixa_Principal"],
         column_config={
             "Qtd_Titulos": st.column_config.NumberColumn("Qtd. títulos"),
@@ -371,17 +355,16 @@ with left:
                 required=True,
             ),
         },
-        key="editor_checklist_v112"
+        key="editor_checklist_v113"
     )
 
     for _, row in edited.iterrows():
-        st.session_state["status_manual_v112"][str(row["Cliente"])] = row["Situação Manual"]
+        st.session_state["status_manual_v113"][str(row["Cliente"])] = row["Situação Manual"]
 
-    filtrado["Situação Manual"] = filtrado["Cliente"].astype(str).map(st.session_state["status_manual_v112"])
+    filtrado["Situação Manual"] = filtrado["Cliente"].astype(str).map(st.session_state["status_manual_v113"])
 
 with right:
     st.markdown('<div class="section-title">Gerador de mensagem</div><div class="small-muted">Uma única mensagem por cliente.</div>', unsafe_allow_html=True)
-
     clientes_msg = filtrado_clientes.sort_values(["Maior_Dias", "Valor_total"], ascending=[False, False]).copy()
     if len(clientes_msg) == 0:
         st.info("Nenhum cliente disponível.")
@@ -400,7 +383,7 @@ with right:
         st.code(gerar_mensagem_cliente(df_cliente), language=None)
         st.caption("Use o ícone de copiar no bloco acima para enviar no WhatsApp.")
 
-st.markdown(f'<div class="section-title" style="margin-top:14px;">Tabela final de cobrança</div><div class="small-muted">Mostrando {len(filtrado):,} registros</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="section-title" style="margin-top:12px;">Tabela final de cobrança</div><div class="small-muted">Mostrando {len(filtrado):,} registros</div>', unsafe_allow_html=True)
 
 colunas_finais = safe_cols(filtrado, ["Cliente","Nome","N doc","Referência","Tipo","Data Doc","Venc Liq","Montante","Dias","Faixa","Situação Manual"])
 mostrar = filtrado[colunas_finais].copy()
@@ -412,10 +395,10 @@ if "Venc Liq" in mostrar.columns:
 if "Montante" in mostrar.columns:
     mostrar["Montante"] = mostrar["Montante"].map(moeda_br)
 
-st.dataframe(mostrar, use_container_width=True, hide_index=True, height=620)
+styled = mostrar.style.map(estilo_faixa, subset=["Faixa"])
+st.dataframe(styled, use_container_width=True, hide_index=True, height=620)
 
 csv_saida = mostrar.copy()
-
 st.download_button(
     "Baixar resultado em CSV",
     csv_saida.to_csv(index=False).encode("utf-8-sig"),
