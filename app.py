@@ -5,15 +5,23 @@ import streamlit as st
 
 st.set_page_config(page_title="Gestão de Vencidos", layout="wide")
 
-# ================= CONFIG =================
 STATUS_BLOQUEIO_GRUPO = ["BLOQUEADO", "RADAR PERDA", "PROTESTO IMINENTE"]
 
-# ================= FUNÇÕES =================
 def moeda_br(v):
     try:
         return f"R$ {float(v):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     except:
         return "R$ 0,00"
+
+def tratar_montante(col):
+    return (
+        col.astype(str)
+        .str.replace("R$", "", regex=False)
+        .str.replace(".", "", regex=False)
+        .str.replace(",", ".", regex=False)
+        .str.strip()
+        .astype(float)
+    )
 
 def gerar_mensagem_cliente(df_cliente):
     total = df_cliente["Montante"].sum()
@@ -38,16 +46,21 @@ Fico à disposição."""
 
     return mensagem
 
-# ================= APP =================
 st.title("Gestão de Vencidos")
 
 arquivo = st.file_uploader("Subir planilha")
 
 if arquivo:
-    df = pd.read_excel(arquivo)
+    # 🔥 LEITURA INTELIGENTE (CSV ou Excel)
+    if arquivo.name.endswith(".csv"):
+        df = pd.read_csv(arquivo, sep=None, engine='python', encoding='latin1')
+    else:
+        df = pd.read_excel(arquivo)
+
+    # 🔥 TRATAR COLUNA MONTANTE
+    df["Montante"] = tratar_montante(df["Montante"])
 
     df["Venc Liq"] = pd.to_datetime(df["Venc Liq"], dayfirst=True)
-    df["Montante"] = pd.to_numeric(df["Montante"], errors="coerce")
 
     data_ref = st.date_input("Data de referência", value=date.today())
 
@@ -69,7 +82,6 @@ if arquivo:
 
     df["Status"] = df["Dias"].apply(status)
 
-    # ================= CARDS =================
     col1, col2, col3, col4 = st.columns(4)
 
     col1.metric("Total títulos", len(df))
@@ -81,7 +93,6 @@ if arquivo:
     clientes_bloqueados = df[df["Status"].isin(STATUS_BLOQUEIO_GRUPO)]["Cliente"].nunique()
     col4.metric("Clientes bloqueados", clientes_bloqueados)
 
-    # ================= LAYOUT =================
     left, right = st.columns([1.4, 0.8])
 
     with left:
@@ -104,15 +115,12 @@ if arquivo:
         st.subheader("Gerador de mensagem")
 
         clientes = df["Cliente"].unique()
-
         cliente_sel = st.selectbox("Selecione o cliente", clientes)
 
         df_cliente = df[df["Cliente"] == cliente_sel]
 
         mensagem = gerar_mensagem_cliente(df_cliente)
-
         st.code(mensagem)
 
     st.subheader("Tabela")
     st.dataframe(df)
-
