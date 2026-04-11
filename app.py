@@ -341,16 +341,25 @@ div[data-testid="stHorizontalBlock"] .stButton > button {
 
 st.markdown("""
 <style>
-/* MODO ULTRA COMPACTO DO QUADRO DE MENSAGEM, SEM ALTERAR CONTEÚDO */
-div[data-testid="stCodeBlock"] pre,
-div[data-testid="stCodeBlock"] code {
-    font-size: 8px !important;
-    line-height: 1.05 !important;
+/* DIMINUI CHECKLIST DE COBRANÇA (TABELA) */
+div[data-testid="stDataFrame"] div {
+    font-size: 11px !important;
 }
-div[data-testid="stCodeBlock"] {
-    max-height: 145px !important;
-    min-height: 145px !important;
+div[data-testid="stDataFrame"] {
+    max-height: 300px !important;
     overflow-y: auto !important;
+}
+
+/* Cabeçalho menor */
+thead tr th {
+    font-size: 11px !important;
+    padding: 4px !important;
+}
+
+/* Linhas mais compactas */
+tbody tr td {
+    padding: 4px !important;
+    font-size: 11px !important;
 }
 </style>
 """, unsafe_allow_html=True)

@@ -1,1 +1,1 @@
-V12.8 - modo ultra compacto da mensagem, sem alterar conteúdo
+V12.9 - checklist mais compacto (sem alterar conteúdo)
