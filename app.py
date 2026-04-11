@@ -279,15 +279,16 @@ def estilo_faixa(valor):
 st.markdown("""
 <style>
 .stApp { background: #f5f7fb; }
-.block-container { padding-top: 0.65rem; padding-bottom: 1rem; max-width: 1500px; }
-div[data-testid="stHorizontalBlock"] { gap: 0.32rem; }
+.block-container { padding-top: 2.2rem; padding-bottom: 0.9rem; max-width: 1500px; }
+div[data-testid="stHorizontalBlock"] { gap: 0.28rem; }
 
 .header-title {
     font-size: 24px;
     font-weight: 800;
     color: #0f172a;
     margin-bottom: 0;
-    line-height: 1.05;
+    line-height: 1.18;
+    padding-top: 0.2rem;
 }
 .header-sub {
     font-size: 12px;
@@ -338,33 +339,54 @@ div[data-testid="stHorizontalBlock"] .stButton > button {
     padding: 2px 6px !important;
 }
 
-/* Compactar início */
-div[data-testid="stFileUploader"] { margin-bottom: 0.15rem !important; }
+/* Compactação real do topo */
+div[data-testid="stFileUploader"] { margin-bottom: 0 !important; }
+div[data-testid="stFileUploader"] section {
+    padding: 0.3rem 0.5rem !important;
+    min-height: 66px !important;
+}
 div[data-baseweb="input"] { min-height: 42px !important; }
 div[data-baseweb="input"] input { font-size: 14px !important; }
-div[data-baseweb="select"] { min-height: 42px !important; }
-label[data-testid="stWidgetLabel"] { margin-bottom: 0.1rem !important; }
+div[data-testid="stDateInput"] { margin-bottom: 0 !important; }
+div[data-testid="stTextInput"] { margin-bottom: 0 !important; }
 div[data-testid="stCheckbox"] { margin-top: 0.35rem !important; }
+
 .small-clear button {
     min-height: 42px !important;
+    padding: 0 10px !important;
     border-radius: 12px !important;
+    font-size: 13px !important;
 }
-.metric-card {
-    padding: 12px 14px !important;
-    border-radius: 16px !important;
-}
-.metric-label { font-size: 12px !important; margin-bottom: 4px !important; }
-.metric-value { font-size: 24px !important; }
-.small-muted { font-size: 11px !important; margin-bottom: 0.2rem !important; }
-div[data-testid="stHorizontalBlock"] .stButton > button {
-    min-height: 52px !important;
-    border-radius: 12px !important;
-    padding: 3px 5px !important;
+
+.small-muted {
     font-size: 11px !important;
+    margin-top: 0.15rem !important;
+    margin-bottom: 0.15rem !important;
+}
+
+div[data-testid="stHorizontalBlock"] .stButton > button {
+    min-height: 48px !important;
+    padding: 2px 5px !important;
+    font-size: 11px !important;
+    line-height: 1.08 !important;
+    border-radius: 12px !important;
 }
 .legend-mini {
     font-size: 9px !important;
-    margin-top: 1px !important;
+    margin-top: 0 !important;
+    margin-bottom: 0.15rem !important;
+}
+
+.metric-card {
+    padding: 10px 14px !important;
+    border-radius: 16px !important;
+}
+.metric-label { font-size: 12px !important; margin-bottom: 4px !important; }
+.metric-value { font-size: 22px !important; line-height: 1.02 !important; }
+
+/* reduzir espaço depois do topo */
+.header-sub + div[data-testid="stHorizontalBlock"] {
+    margin-top: 0.1rem !important;
 }
 
 </style>
@@ -398,7 +420,7 @@ if "nao_cobrados_v121" not in st.session_state:
 st.markdown('<div class="header-title">🧾 Cobrança Inteligente</div>', unsafe_allow_html=True)
 st.markdown('<div class="header-sub">Veja. Decida. Cobre.</div>', unsafe_allow_html=True)
 
-c1, c2, c3, c4, c5 = st.columns([1.18, 0.72, 1.16, 0.72, 0.48])
+c1, c2, c3, c4, c5 = st.columns([1.15, 0.72, 1.12, 0.70, 0.42])
 with c1:
     arquivo = st.file_uploader("Arquivo", type=["xlsx", "xls", "csv"], label_visibility="collapsed")
 with c2:
@@ -454,7 +476,8 @@ clientes_df["Faixa_Principal"] = clientes_df["Maior_Dias"].apply(faixa_por_dias)
 clientes_df["Situação Manual"] = clientes_df["Cliente"].astype(str).map(st.session_state["status_manual_v121"])
 
 st.markdown('<div class="small-muted">👉 Escolha onde focar agora</div>', unsafe_allow_html=True)
-atalho_cols = st.columns([0.95, 5.05])
+
+atalho_cols = st.columns([0.92, 5.08])
 with atalho_cols[0]:
     if st.button("Clientes bloqueados", key="atalho_clientes_bloqueados", use_container_width=True):
         faixas_bloqueados = ["Protesto Iminente", "Radar de Perda", "Bloqueio"]

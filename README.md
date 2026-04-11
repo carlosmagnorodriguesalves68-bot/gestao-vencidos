@@ -1,1 +1,1 @@
-V13.7 - compactação e profissionalização do topo/início do app, sem alterar funções.
+V13.8 - compactação real do início do app e correção do corte do título, sem alterar funções dos botões.
