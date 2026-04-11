@@ -452,7 +452,7 @@ with m2:
 with m3:
     st.markdown(f'<div class="metric-card"><div class="metric-label">Valor total</div><div class="metric-value">{moeda_br(filtrado["Montante"].sum())}</div></div>', unsafe_allow_html=True)
 
-left, right = st.columns([5.7, 1])
+left, right = st.columns([4, 1])
 
 with left:
     st.markdown("### Checklist de cobrança")

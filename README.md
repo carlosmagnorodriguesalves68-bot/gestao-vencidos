@@ -1,1 +1,1 @@
-V13.2 - Ajuste de largura: Checklist 85% / Mensagem 15%
+V13.3 - Ajuste de largura: Checklist 80% / Mensagem 20%
