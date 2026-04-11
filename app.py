@@ -279,20 +279,22 @@ def estilo_faixa(valor):
 st.markdown("""
 <style>
 .stApp { background: #f5f7fb; }
-.block-container { padding-top: 1.5rem; padding-bottom: 1.2rem; max-width: 1500px; }
-div[data-testid="stHorizontalBlock"] { gap: 0.45rem; }
+.block-container { padding-top: 0.65rem; padding-bottom: 1rem; max-width: 1500px; }
+div[data-testid="stHorizontalBlock"] { gap: 0.32rem; }
 
 .header-title {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 800;
     color: #0f172a;
     margin-bottom: 0;
+    line-height: 1.05;
 }
 .header-sub {
-    font-size: 13px;
+    font-size: 12px;
     color: #6b7280;
-    margin-top: 0;
-    margin-bottom: 0.5rem;
+    margin-top: 0.1rem;
+    margin-bottom: 0.35rem;
+    line-height: 1.1;
 }
 .metric-card {
     background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
@@ -335,6 +337,36 @@ div[data-testid="stHorizontalBlock"] .stButton > button {
     font-size: 11px !important;
     padding: 2px 6px !important;
 }
+
+/* Compactar início */
+div[data-testid="stFileUploader"] { margin-bottom: 0.15rem !important; }
+div[data-baseweb="input"] { min-height: 42px !important; }
+div[data-baseweb="input"] input { font-size: 14px !important; }
+div[data-baseweb="select"] { min-height: 42px !important; }
+label[data-testid="stWidgetLabel"] { margin-bottom: 0.1rem !important; }
+div[data-testid="stCheckbox"] { margin-top: 0.35rem !important; }
+.small-clear button {
+    min-height: 42px !important;
+    border-radius: 12px !important;
+}
+.metric-card {
+    padding: 12px 14px !important;
+    border-radius: 16px !important;
+}
+.metric-label { font-size: 12px !important; margin-bottom: 4px !important; }
+.metric-value { font-size: 24px !important; }
+.small-muted { font-size: 11px !important; margin-bottom: 0.2rem !important; }
+div[data-testid="stHorizontalBlock"] .stButton > button {
+    min-height: 52px !important;
+    border-radius: 12px !important;
+    padding: 3px 5px !important;
+    font-size: 11px !important;
+}
+.legend-mini {
+    font-size: 9px !important;
+    margin-top: 1px !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -366,7 +398,7 @@ if "nao_cobrados_v121" not in st.session_state:
 st.markdown('<div class="header-title">🧾 Cobrança Inteligente</div>', unsafe_allow_html=True)
 st.markdown('<div class="header-sub">Veja. Decida. Cobre.</div>', unsafe_allow_html=True)
 
-c1, c2, c3, c4, c5 = st.columns([1.25, 0.8, 1.2, 0.8, 0.55])
+c1, c2, c3, c4, c5 = st.columns([1.18, 0.72, 1.16, 0.72, 0.48])
 with c1:
     arquivo = st.file_uploader("Arquivo", type=["xlsx", "xls", "csv"], label_visibility="collapsed")
 with c2:
@@ -422,8 +454,7 @@ clientes_df["Faixa_Principal"] = clientes_df["Maior_Dias"].apply(faixa_por_dias)
 clientes_df["Situação Manual"] = clientes_df["Cliente"].astype(str).map(st.session_state["status_manual_v121"])
 
 st.markdown('<div class="small-muted">👉 Escolha onde focar agora</div>', unsafe_allow_html=True)
-
-atalho_cols = st.columns([1.1, 4.9])
+atalho_cols = st.columns([0.95, 5.05])
 with atalho_cols[0]:
     if st.button("Clientes bloqueados", key="atalho_clientes_bloqueados", use_container_width=True):
         faixas_bloqueados = ["Protesto Iminente", "Radar de Perda", "Bloqueio"]

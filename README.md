@@ -1,1 +1,1 @@
-V13.6 - adiciona atalho 'Clientes bloqueados' que seleciona Protesto Iminente, Radar de Perda e Bloqueio.
+V13.7 - compactação e profissionalização do topo/início do app, sem alterar funções.
