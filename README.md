@@ -1,7 +1,9 @@
-# Cobrança Inteligente V11.7
+# Cobrança Inteligente V12
 
-Correções:
-- corrigido erro de sintaxe da V11.6
-- seleção múltipla nos botões
+Versão completa com:
+- seleção múltipla dos botões
+- nenhum botão selecionado por padrão
+- botão pequeno de limpar filtro
 - nome aplicado no topo
-- layout profissional mantido
+- cards mantidos
+- checklist, mensagem e tabela colorida
