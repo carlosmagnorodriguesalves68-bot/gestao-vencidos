@@ -1,1 +1,1 @@
-V13.4 - Ajuste 75% Checklist / 25% Mensagem
+V13.5 - largura 75/25, quadro da mensagem menor e com scroll interno
