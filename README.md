@@ -1,1 +1,1 @@
-V13.8 - compactação real do início do app e correção do corte do título, sem alterar funções dos botões.
+V13.9 - adiciona 3 atalhos grandes: Clientes bloqueados, Risco de bloquear (avisar) e Limpar filtros; remove botão antigo de limpar.

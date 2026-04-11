@@ -279,23 +279,20 @@ def estilo_faixa(valor):
 st.markdown("""
 <style>
 .stApp { background: #f5f7fb; }
-.block-container { padding-top: 2.2rem; padding-bottom: 0.9rem; max-width: 1500px; }
-div[data-testid="stHorizontalBlock"] { gap: 0.28rem; }
+.block-container { padding-top: 1.5rem; padding-bottom: 1.2rem; max-width: 1500px; }
+div[data-testid="stHorizontalBlock"] { gap: 0.45rem; }
 
 .header-title {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 800;
     color: #0f172a;
     margin-bottom: 0;
-    line-height: 1.18;
-    padding-top: 0.2rem;
 }
 .header-sub {
-    font-size: 12px;
+    font-size: 13px;
     color: #6b7280;
-    margin-top: 0.1rem;
-    margin-bottom: 0.35rem;
-    line-height: 1.1;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
 }
 .metric-card {
     background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
@@ -339,54 +336,12 @@ div[data-testid="stHorizontalBlock"] .stButton > button {
     padding: 2px 6px !important;
 }
 
-/* Compactação real do topo */
-div[data-testid="stFileUploader"] { margin-bottom: 0 !important; }
-div[data-testid="stFileUploader"] section {
-    padding: 0.3rem 0.5rem !important;
-    min-height: 66px !important;
-}
-div[data-baseweb="input"] { min-height: 42px !important; }
-div[data-baseweb="input"] input { font-size: 14px !important; }
-div[data-testid="stDateInput"] { margin-bottom: 0 !important; }
-div[data-testid="stTextInput"] { margin-bottom: 0 !important; }
-div[data-testid="stCheckbox"] { margin-top: 0.35rem !important; }
-
-.small-clear button {
-    min-height: 42px !important;
-    padding: 0 10px !important;
-    border-radius: 12px !important;
-    font-size: 13px !important;
-}
-
-.small-muted {
-    font-size: 11px !important;
-    margin-top: 0.15rem !important;
-    margin-bottom: 0.15rem !important;
-}
-
+/* Atalhos grandes no topo */
 div[data-testid="stHorizontalBlock"] .stButton > button {
-    min-height: 48px !important;
-    padding: 2px 5px !important;
-    font-size: 11px !important;
-    line-height: 1.08 !important;
-    border-radius: 12px !important;
+    min-height: 56px;
 }
-.legend-mini {
-    font-size: 9px !important;
-    margin-top: 0 !important;
-    margin-bottom: 0.15rem !important;
-}
-
-.metric-card {
-    padding: 10px 14px !important;
-    border-radius: 16px !important;
-}
-.metric-label { font-size: 12px !important; margin-bottom: 4px !important; }
-.metric-value { font-size: 22px !important; line-height: 1.02 !important; }
-
-/* reduzir espaço depois do topo */
-.header-sub + div[data-testid="stHorizontalBlock"] {
-    margin-top: 0.1rem !important;
+button[kind="secondary"], button[kind="primary"] {
+    border-radius: 14px !important;
 }
 
 </style>
@@ -420,7 +375,7 @@ if "nao_cobrados_v121" not in st.session_state:
 st.markdown('<div class="header-title">🧾 Cobrança Inteligente</div>', unsafe_allow_html=True)
 st.markdown('<div class="header-sub">Veja. Decida. Cobre.</div>', unsafe_allow_html=True)
 
-c1, c2, c3, c4, c5 = st.columns([1.15, 0.72, 1.12, 0.70, 0.42])
+c1, c2, c3, c4, c5 = st.columns([1.25, 0.8, 1.2, 0.8, 0.55])
 with c1:
     arquivo = st.file_uploader("Arquivo", type=["xlsx", "xls", "csv"], label_visibility="collapsed")
 with c2:
@@ -430,15 +385,7 @@ with c3:
 with c4:
     nao_cobrados = st.checkbox("Não cobrados", value=st.session_state["nao_cobrados_v121"])
 with c5:
-    st.markdown('<div class="small-clear">', unsafe_allow_html=True)
-    limpar = st.button("Limpar", use_container_width=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-if limpar:
-    st.session_state["faixas_sel_v121"] = []
-    st.session_state["busca_v121"] = ""
-    st.session_state["nao_cobrados_v121"] = False
-    st.rerun()
+    st.write("")
 
 st.session_state["busca_v121"] = busca
 st.session_state["nao_cobrados_v121"] = nao_cobrados
@@ -477,7 +424,7 @@ clientes_df["Situação Manual"] = clientes_df["Cliente"].astype(str).map(st.ses
 
 st.markdown('<div class="small-muted">👉 Escolha onde focar agora</div>', unsafe_allow_html=True)
 
-atalho_cols = st.columns([0.92, 5.08])
+atalho_cols = st.columns(3)
 with atalho_cols[0]:
     if st.button("Clientes bloqueados", key="atalho_clientes_bloqueados", use_container_width=True):
         faixas_bloqueados = ["Protesto Iminente", "Radar de Perda", "Bloqueio"]
@@ -486,6 +433,23 @@ with atalho_cols[0]:
             st.session_state["faixas_sel_v121"] = []
         else:
             st.session_state["faixas_sel_v121"] = faixas_bloqueados
+        st.rerun()
+
+with atalho_cols[1]:
+    if st.button("Risco de bloquear (avisar)", key="atalho_risco_bloquear", use_container_width=True):
+        faixas_risco = ["Risco"]
+        atuais = list(st.session_state["faixas_sel_v121"])
+        if set(atuais) == set(faixas_risco):
+            st.session_state["faixas_sel_v121"] = []
+        else:
+            st.session_state["faixas_sel_v121"] = faixas_risco
+        st.rerun()
+
+with atalho_cols[2]:
+    if st.button("Limpar filtros", key="atalho_limpar_filtros_topo", use_container_width=True):
+        st.session_state["faixas_sel_v121"] = []
+        st.session_state["busca_v121"] = ""
+        st.session_state["nao_cobrados_v121"] = False
         st.rerun()
 
 btn_cols = st.columns(6)
