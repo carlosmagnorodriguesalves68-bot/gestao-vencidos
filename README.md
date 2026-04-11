@@ -1,6 +1,3 @@
-# Gestão de Vencidos V11.3
+# Gestão de Vencidos V11.4
 
-Ajustes:
-- botões de faixa compactos em uma linha
-- tabela final mantém cores
-- layout mais enxuto
+Use o código completo enviado no chat para substituir o app.py.
