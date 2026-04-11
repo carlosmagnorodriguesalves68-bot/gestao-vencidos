@@ -1,1 +1,1 @@
-V12.6 - reduz apenas o quadro da mensagem e mantém o botão de copiar
+V12.7 - quadro mensagem bem menor

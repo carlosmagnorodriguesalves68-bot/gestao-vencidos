@@ -341,17 +341,17 @@ div[data-testid="stHorizontalBlock"] .stButton > button {
 
 st.markdown("""
 <style>
+/* DIMINUI FORTE O QUADRO DE MENSAGEM */
 div[data-testid="stCodeBlock"] pre, div[data-testid="stCodeBlock"] code {
-    font-size: 10px !important;
-    line-height: 1.15 !important;
+    font-size: 9px !important;
+    line-height: 1.1 !important;
 }
 div[data-testid="stCodeBlock"] {
-    max-height: 260px !important;
+    max-height: 180px !important;
     overflow-y: auto !important;
 }
 </style>
 """, unsafe_allow_html=True)
-
 if "faixas_sel_v121" not in st.session_state:
     st.session_state["faixas_sel_v121"] = []
 if "status_manual_v121" not in st.session_state:
