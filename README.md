@@ -1,1 +1,1 @@
-V12.3 - ajuste fino adicional na fonte da mensagem (menor e mais compacta)
+V12.4 - ajuste mais compacto mensagem
