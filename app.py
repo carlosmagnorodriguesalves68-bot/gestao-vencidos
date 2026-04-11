@@ -423,6 +423,17 @@ clientes_df["Situação Manual"] = clientes_df["Cliente"].astype(str).map(st.ses
 
 st.markdown('<div class="small-muted">👉 Escolha onde focar agora</div>', unsafe_allow_html=True)
 
+atalho_cols = st.columns([1.1, 4.9])
+with atalho_cols[0]:
+    if st.button("Clientes bloqueados", key="atalho_clientes_bloqueados", use_container_width=True):
+        faixas_bloqueados = ["Protesto Iminente", "Radar de Perda", "Bloqueio"]
+        atuais = list(st.session_state["faixas_sel_v121"])
+        if set(atuais) == set(faixas_bloqueados):
+            st.session_state["faixas_sel_v121"] = []
+        else:
+            st.session_state["faixas_sel_v121"] = faixas_bloqueados
+        st.rerun()
+
 btn_cols = st.columns(6)
 for i, (nome, _ini, _fim, legenda, acao) in enumerate(FAIXAS):
     qtd = clientes_df[clientes_df["Faixa_Principal"] == nome]["Cliente"].nunique()

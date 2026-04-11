@@ -1,1 +1,1 @@
-V13.5 - largura 75/25, quadro da mensagem menor e com scroll interno
+V13.6 - adiciona atalho 'Clientes bloqueados' que seleciona Protesto Iminente, Radar de Perda e Bloqueio.
