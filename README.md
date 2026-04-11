@@ -1,6 +1,1 @@
-# Cobrança Inteligente V13.1
-
-Ajuste aplicado:
-- redução da largura do quadro Checklist de cobrança
-- sem controle manual
-- sem alterar conteúdo
+V13.2 - Ajuste de largura: Checklist 85% / Mensagem 15%
