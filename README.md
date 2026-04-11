@@ -1,9 +1,7 @@
-# Gestão de Vencidos V10.3
-
-Versão corrigida e simplificada.
+# Gestão de Vencidos V10.4
 
 ## Melhorias
-- leitura robusta de CSV e Excel
-- botão para limpar todos os filtros
+- corrigido botão limpar filtros
+- removido quadro de resumo por status
 - checklist agrupado por cliente
-- gerador de mensagem por cliente
+- leitura robusta de CSV e Excel

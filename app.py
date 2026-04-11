@@ -4,7 +4,7 @@ from io import StringIO, BytesIO
 import pandas as pd
 import streamlit as st
 
-st.set_page_config(page_title="Gestão de Vencidos V10.3", layout="wide")
+st.set_page_config(page_title="Gestão de Vencidos V10.4", layout="wide")
 
 STATUS_BLOQUEIO_GRUPO = ["BLOQUEADO", "RADAR PERDA", "PROTESTO IMINENTE"]
 STATUS_ORDEM = {
@@ -270,19 +270,19 @@ div[data-testid="stDataFrame"] {
 </style>
 """, unsafe_allow_html=True)
 
-st.title("Gestão de Vencidos V10.3")
-st.caption("Versão corrigida com leitura robusta de CSV/Excel e botão para limpar filtros.")
+st.title("Gestão de Vencidos V10.4")
+st.caption("Versão corrigida com limpeza de filtros sem erro e painel mais compacto.")
+
+if "status_sel_v104" not in st.session_state:
+    st.session_state["status_sel_v104"] = STATUS_LISTA.copy()
+if "busca_v104" not in st.session_state:
+    st.session_state["busca_v104"] = ""
+if "nao_cobrados_v104" not in st.session_state:
+    st.session_state["nao_cobrados_v104"] = False
+if "status_manual_v104" not in st.session_state:
+    st.session_state["status_manual_v104"] = {}
 
 arquivo = st.file_uploader("Selecione o arquivo", type=["xlsx", "xls", "csv"])
-
-if "status_sel_v103" not in st.session_state:
-    st.session_state["status_sel_v103"] = STATUS_LISTA.copy()
-if "busca_v103" not in st.session_state:
-    st.session_state["busca_v103"] = ""
-if "nao_cobrados_v103" not in st.session_state:
-    st.session_state["nao_cobrados_v103"] = False
-if "status_manual_v103" not in st.session_state:
-    st.session_state["status_manual_v103"] = {}
 
 if arquivo is None:
     st.info("Envie o arquivo para começar.")
@@ -302,41 +302,44 @@ with c2:
     st.info(f"Arquivo lido como {origem} | Cabeçalho encontrado na linha {linha_cabecalho}")
 
 df = aplicar_logica(base_df, data_ref)
-df["chave"] = df["Cliente"].astype(str)
 
 for cliente in df["Cliente"].astype(str).unique():
-    if cliente not in st.session_state["status_manual_v103"]:
-        st.session_state["status_manual_v103"][cliente] = "Não cobrado"
+    if cliente not in st.session_state["status_manual_v104"]:
+        st.session_state["status_manual_v104"][cliente] = "Não cobrado"
 
-df["Situação Manual"] = df["Cliente"].astype(str).map(st.session_state["status_manual_v103"])
+df["Situação Manual"] = df["Cliente"].astype(str).map(st.session_state["status_manual_v104"])
 
 f1, f2, f3, f4 = st.columns([1.2, 1.4, 1.1, 0.9])
 with f1:
-    st.multiselect("Status", STATUS_LISTA, key="status_sel_v103")
+    status_sel = st.multiselect("Status", STATUS_LISTA, default=st.session_state["status_sel_v104"])
 with f2:
-    st.text_input("Cliente ou nome", key="busca_v103")
+    busca = st.text_input("Cliente ou nome", value=st.session_state["busca_v104"])
 with f3:
-    st.checkbox("Mostrar só não cobrados", key="nao_cobrados_v103")
+    nao_cobrados = st.checkbox("Mostrar só não cobrados", value=st.session_state["nao_cobrados_v104"])
 with f4:
     st.write("")
     st.write("")
-    if st.button("Limpar filtros", use_container_width=True):
-        st.session_state["status_sel_v103"] = STATUS_LISTA.copy()
-        st.session_state["busca_v103"] = ""
-        st.session_state["nao_cobrados_v103"] = False
-        st.rerun()
+    limpar = st.button("Limpar filtros", use_container_width=True)
 
-filtrado = df[df["Status"].isin(st.session_state["status_sel_v103"])].copy()
+if limpar:
+    status_sel = STATUS_LISTA.copy()
+    busca = ""
+    nao_cobrados = False
 
-if st.session_state["busca_v103"]:
-    busca = st.session_state["busca_v103"]
+st.session_state["status_sel_v104"] = status_sel
+st.session_state["busca_v104"] = busca
+st.session_state["nao_cobrados_v104"] = nao_cobrados
+
+filtrado = df[df["Status"].isin(status_sel)].copy()
+
+if busca:
     mask = (
         filtrado["Cliente"].astype(str).str.contains(busca, case=False, na=False) |
         filtrado["Nome"].astype(str).str.contains(busca, case=False, na=False)
     )
     filtrado = filtrado[mask]
 
-if st.session_state["nao_cobrados_v103"]:
+if nao_cobrados:
     filtrado = filtrado[filtrado["Situação Manual"] == "Não cobrado"]
 
 m1, m2, m3, m4 = st.columns(4)
@@ -350,20 +353,6 @@ with m3:
 with m4:
     bloqueados = filtrado[filtrado["Status"].isin(STATUS_BLOQUEIO_GRUPO)]["Cliente"].nunique()
     st.markdown(f'<div class="metric-card"><div class="metric-label">Clientes bloqueados</div><div class="metric-value">{bloqueados:,}</div></div>', unsafe_allow_html=True)
-
-resumo = filtrado.groupby("Status", as_index=False).agg(
-    Quantidade=("Status", "size"),
-    Clientes=("Cliente", "nunique"),
-    Valor=("Montante", "sum"),
-)
-if not resumo.empty:
-    resumo["ordem"] = resumo["Status"].map(STATUS_ORDEM)
-    resumo["Ação principal"] = resumo["Status"].apply(acao_por_status)
-    resumo = resumo.sort_values("ordem").drop(columns="ordem")
-    resumo["Valor"] = resumo["Valor"].map(moeda_br)
-
-st.markdown('<div class="section-title">Resumo por status</div>', unsafe_allow_html=True)
-st.dataframe(resumo, use_container_width=True, hide_index=True)
 
 left, right = st.columns([1.5, 0.8])
 
@@ -402,13 +391,13 @@ with left:
                 required=True,
             ),
         },
-        key="editor_checklist_v103"
+        key="editor_checklist_v104"
     )
 
     for _, row in edited.iterrows():
-        st.session_state["status_manual_v103"][str(row["Cliente"])] = row["Situação_Manual"]
+        st.session_state["status_manual_v104"][str(row["Cliente"])] = row["Situação_Manual"]
 
-    filtrado["Situação Manual"] = filtrado["Cliente"].astype(str).map(st.session_state["status_manual_v103"])
+    filtrado["Situação Manual"] = filtrado["Cliente"].astype(str).map(st.session_state["status_manual_v104"])
 
 with right:
     st.markdown('<div class="section-title">Gerador de mensagem</div><div class="small-muted">Uma única mensagem por cliente.</div>', unsafe_allow_html=True)
