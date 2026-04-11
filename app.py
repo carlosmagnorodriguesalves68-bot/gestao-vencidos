@@ -106,21 +106,6 @@ def converter_valor_brasileiro(valor):
 def converter_montante(serie):
     return serie.apply(converter_valor_brasileiro)
 
-def achar_data_sugerida(bruto):
-    linhas_validas = bruto.dropna(how="all").reset_index(drop=True)
-    for i in range(min(8, len(linhas_validas))):
-        for j in range(min(8, linhas_validas.shape[1])):
-            valor = linhas_validas.iat[i, j]
-            if pd.isna(valor):
-                continue
-            try:
-                dt = pd.to_datetime(valor, dayfirst=True, errors="raise")
-                if dt.year >= 2020:
-                    return dt.date()
-            except Exception:
-                pass
-    return date.today()
-
 def achar_cabecalho(bruto):
     for i in range(min(30, len(bruto))):
         linha_bruta = bruto.iloc[i]
@@ -152,7 +137,6 @@ def ler_arquivo(uploaded_file):
     while len(bruto) > 0 and bruto.iloc[0].isna().all():
         bruto = bruto.iloc[1:].reset_index(drop=True)
 
-    data_sugerida = achar_data_sugerida(bruto)
     header_idx = achar_cabecalho(bruto)
     if header_idx is None:
         raise ValueError("Não encontrei a linha do cabeçalho automaticamente.")
@@ -183,7 +167,7 @@ def ler_arquivo(uploaded_file):
     df["Venc Liq"] = pd.to_datetime(df["Venc Liq"], dayfirst=True, errors="coerce")
     df["Montante"] = converter_montante(df["Montante"])
     df = df.dropna(subset=["Venc Liq", "Montante"])
-    return df, origem, data_sugerida, header_idx + 1
+    return df, origem, header_idx + 1
 
 def classificar(dias):
     for ini, fim, status, acao in REGRAS:
@@ -230,48 +214,22 @@ def estilo_status(valor):
 def gerar_chave(row):
     return f"{row['Cliente']}|{row['N doc']}|{row['Referência']}|{row['Venc Liq']}|{row['Montante']}"
 
-def gerar_mensagem(row):
-    valor = moeda_br(row["Montante"])
-    status = row["Status"]
-    acao = row["Ação"]
+def gerar_mensagem_cliente(df_cliente):
+    primeira = df_cliente.iloc[0]
+    status = primeira["Status"]
+    nome = primeira["Nome"]
+    total = df_cliente["Montante"].sum()
 
-    if status == "INADIMPLÊNCIA":
-        return f"""Olá, tudo bem?
+    linhas = []
+    for _, row in df_cliente.sort_values(["Venc Liq", "Montante"], ascending=[True, False]).iterrows():
+        linhas.append(
+            f"- Título {row['N doc']} | Vencimento {row['Venc Liq'].strftime('%d/%m/%Y')} | Valor {moeda_br(row['Montante'])}"
+        )
 
-Identificamos títulos em aberto no valor de {valor} em situação de inadimplência.
-
-Poderia nos informar uma previsão de regularização?
-
-Fico à disposição."""
-    if status == "PROTESTO IMINENTE":
-        return f"""Olá, tudo bem?
-
-Estamos com títulos em aberto no valor de {valor}, próximos de protesto.
-
-Para evitar qualquer impacto, peço que verifique a possibilidade de regularização.
-
-Fico à disposição."""
-    if status == "BLOQUEADO":
-        return f"""Olá, tudo bem?
-
-Identificamos pendências no valor de {valor} e o cadastro está bloqueado no momento.
-
-Assim que possível, podemos verificar juntos a regularização.
-
-Conte comigo."""
-    if status == "RISCO DE BLOQUEIO":
-        return f"""Olá, tudo bem?
-
-Constam títulos em aberto no valor de {valor} com risco de bloqueio.
-
-Peço que verifique, por favor. Qualquer dúvida, estou à disposição."""
-    return f"""Olá, tudo bem?
-
-Constam títulos em aberto no valor de {valor}.
-
-A ação indicada no momento é: {acao.lower()}.
-
-Fico à disposição."""
+    cabecalho = f"Olá, tudo bem?\n\nIdentificamos os seguintes títulos em aberto do cliente {nome}:\n\n"
+    corpo = "\n".join(linhas)
+    fechamento = f"\n\nValor total em aberto: {moeda_br(total)}.\n\nSituação atual: {status}.\nPor favor, nos informe uma previsão de regularização.\n\nFico à disposição."
+    return cabecalho + corpo + fechamento
 
 st.markdown("""
 <style>
@@ -286,15 +244,7 @@ st.markdown("""
 }
 .metric-label { font-size: 13px; color: #6b7280; margin-bottom: 8px; }
 .metric-value { font-size: 30px; font-weight: 800; color: #0f172a; line-height: 1.1; }
-.section-card {
-    background: #ffffff;
-    border: 1px solid #e6ebf2;
-    border-radius: 18px;
-    padding: 14px 18px;
-    box-shadow: 0 6px 18px rgba(16,24,40,0.05);
-    margin-bottom: 14px;
-}
-.section-title { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 2px; }
+.section-title { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
 .small-muted { font-size: 13px; color: #6b7280; }
 div[data-testid="stDataFrame"] {
     border: 1px solid #e6ebf2;
@@ -315,14 +265,14 @@ if arquivo is None:
     st.stop()
 
 try:
-    base_df, origem, data_sugerida, linha_cabecalho = ler_arquivo(arquivo)
+    base_df, origem, linha_cabecalho = ler_arquivo(arquivo)
 except Exception as e:
     st.error(f"Erro ao ler o arquivo: {e}")
     st.stop()
 
 cinfo1, cinfo2 = st.columns([1, 1])
 with cinfo1:
-    data_ref = st.date_input("Data de referência para cálculo dos dias", value=data_sugerida, format="DD/MM/YYYY")
+    data_ref = st.date_input("Data de referência para cálculo dos dias", value=date.today(), format="DD/MM/YYYY")
 with cinfo2:
     st.write("")
     st.info(f"Arquivo lido como {origem} | Cabeçalho encontrado na linha {linha_cabecalho}")
@@ -339,8 +289,6 @@ for _, row in df.iterrows():
         st.session_state["status_manual"][chave] = "Não cobrado"
 
 df["Situação Manual"] = df["chave"].map(st.session_state["status_manual"])
-
-st.markdown('<div class="section-card"><div class="section-title">Filtros</div><div class="small-muted">Filtre por status, cliente ou andamento da cobrança.</div></div>', unsafe_allow_html=True)
 
 f1, f2, f3 = st.columns([1.2, 1.4, 1.1])
 with f1:
@@ -394,59 +342,72 @@ if not resumo_filtrado.empty:
 else:
     resumo_exibir = pd.DataFrame(columns=["Status", "Quantidade", "Clientes", "Valor", "Ação principal"])
 
-st.markdown('<div class="section-card"><div class="section-title">Resumo por status</div></div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">Resumo por status</div>', unsafe_allow_html=True)
 st.dataframe(resumo_exibir, use_container_width=True, hide_index=True)
 
-st.markdown('<div class="section-card"><div class="section-title">Checklist de cobrança</div><div class="small-muted">Marque o andamento do que você já cobrou hoje.</div></div>', unsafe_allow_html=True)
+left, right = st.columns([1.15, 1])
 
-editor_df = filtrado[["chave", "Cliente", "Nome", "Montante", "Dias", "Status", "Prioridade", "Situação Manual"]].copy()
-editor_df["Montante"] = editor_df["Montante"].map(moeda_br)
+with left:
+    st.markdown('<div class="section-title">Checklist de cobrança</div><div class="small-muted">Marque o andamento do que você já cobrou hoje.</div>', unsafe_allow_html=True)
+    editor_df = filtrado[["chave", "Cliente", "Nome", "Montante", "Dias", "Status", "Prioridade", "Situação Manual"]].copy()
+    editor_df["Montante"] = editor_df["Montante"].map(moeda_br)
 
-edited = st.data_editor(
-    editor_df,
-    hide_index=True,
-    use_container_width=True,
-    num_rows="fixed",
-    disabled=["chave", "Cliente", "Nome", "Montante", "Dias", "Status", "Prioridade"],
-    column_config={
-        "chave": None,
-        "Situação Manual": st.column_config.SelectboxColumn(
-            "Situação Manual",
-            options=SITUACOES_MANUAIS,
-            required=True,
-        ),
-    },
-    key="editor_checklist"
-)
+    edited = st.data_editor(
+        editor_df,
+        hide_index=True,
+        use_container_width=True,
+        num_rows="fixed",
+        height=360,
+        disabled=["chave", "Cliente", "Nome", "Montante", "Dias", "Status", "Prioridade"],
+        column_config={
+            "chave": None,
+            "Situação Manual": st.column_config.SelectboxColumn(
+                "Situação Manual",
+                options=SITUACOES_MANUAIS,
+                required=True,
+            ),
+        },
+        key="editor_checklist"
+    )
 
-for _, row in edited.iterrows():
-    st.session_state["status_manual"][row["chave"]] = row["Situação Manual"]
+    for _, row in edited.iterrows():
+        st.session_state["status_manual"][row["chave"]] = row["Situação Manual"]
 
 filtrado["Situação Manual"] = filtrado["chave"].map(st.session_state["status_manual"])
 
-st.markdown('<div class="section-card"><div class="section-title">Gerador de mensagem</div><div class="small-muted">Selecione um cliente da lista filtrada e copie a mensagem padrão.</div></div>', unsafe_allow_html=True)
+with right:
+    st.markdown('<div class="section-title">Gerador de mensagem</div><div class="small-muted">Selecione o cliente e gere uma única mensagem com todos os títulos.</div>', unsafe_allow_html=True)
 
-opcoes_msg = filtrado.copy()
-opcoes_msg["descricao"] = opcoes_msg.apply(
-    lambda r: f"{r['Cliente']} - {r['Nome']} | {r['Status']} | {moeda_br(r['Montante'])}",
-    axis=1
-)
-
-if len(opcoes_msg) == 0:
-    st.info("Nenhum registro disponível para gerar mensagem.")
-else:
-    idx = st.selectbox(
-        "Selecione o cliente/título",
-        options=opcoes_msg.index.tolist(),
-        format_func=lambda i: opcoes_msg.loc[i, "descricao"]
+    clientes_msg = (
+        filtrado.groupby(["Cliente", "Nome"], as_index=False)
+                .agg(
+                    Valor_total=("Montante", "sum"),
+                    Titulos=("N doc", "count"),
+                    Pior_ordem=("ordem", "min")
+                )
+                .sort_values(["Pior_ordem", "Valor_total"], ascending=[True, False])
     )
-    row = opcoes_msg.loc[idx]
-    mensagem = gerar_mensagem(row)
-    st.code(mensagem, language=None)
-    st.caption("Use o ícone de copiar no bloco acima para enviar no WhatsApp.")
+
+    if len(clientes_msg) == 0:
+        st.info("Nenhum cliente disponível para gerar mensagem.")
+    else:
+        clientes_msg["descricao"] = clientes_msg.apply(
+            lambda r: f"{r['Cliente']} - {r['Nome']} | {r['Titulos']} título(s) | {moeda_br(r['Valor_total'])}",
+            axis=1
+        )
+        idx = st.selectbox(
+            "Selecione o cliente",
+            options=clientes_msg.index.tolist(),
+            format_func=lambda i: clientes_msg.loc[i, "descricao"]
+        )
+        cliente_sel = clientes_msg.loc[idx, "Cliente"]
+        df_cliente = filtrado[filtrado["Cliente"] == cliente_sel].copy()
+        mensagem = gerar_mensagem_cliente(df_cliente)
+        st.code(mensagem, language=None)
+        st.caption("Use o ícone de copiar no bloco acima para enviar no WhatsApp.")
 
 st.markdown(
-    f'<div class="section-card"><div class="section-title">Tabela final de cobrança</div><div class="small-muted">Mostrando {len(filtrado):,} registros</div></div>',
+    f'<div class="section-title" style="margin-top:14px;">Tabela final de cobrança</div><div class="small-muted">Mostrando {len(filtrado):,} registros</div>',
     unsafe_allow_html=True
 )
 
@@ -456,7 +417,7 @@ mostrar["Venc Liq"] = mostrar["Venc Liq"].dt.strftime("%d/%m/%Y")
 mostrar["Montante"] = mostrar["Montante"].map(moeda_br)
 
 styled = mostrar.style.apply(estilo_linhas, axis=None).map(estilo_status, subset=["Status"])
-st.dataframe(styled, use_container_width=True, hide_index=True, height=700)
+st.dataframe(styled, use_container_width=True, hide_index=True, height=620)
 
 csv_saida = filtrado[["Cliente","Nome","N doc","Referência","Tipo","Data Doc","Venc Liq","Montante","Dias","Status","Prioridade","Ação","Situação Manual"]].copy()
 csv_saida["Data Doc"] = csv_saida["Data Doc"].dt.strftime("%d/%m/%Y")
