@@ -360,6 +360,9 @@ button[kind="secondary"], button[kind="primary"] {
 [data-testid="stDataEditor"] [role="gridcell"] { font-size: 12px !important; }
 [data-testid="stDataEditor"] [role="gridcell"] p { font-weight: 500 !important; }
 
+
+[data-testid="stDataEditor"] [role="columnheader"] { font-size: 12px !important; }
+[data-testid="stDataEditor"] [role="gridcell"] { font-size: 12px !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -449,9 +452,7 @@ with atalho_cols[0]:
             st.session_state["faixas_sel_v121"] = []
         else:
             st.session_state["faixas_sel_v121"] = faixas_bloqueados
-        for _k in list(st.session_state.keys()):
-            if str(_k).startswith("editor_checklist_v14"):
-                st.session_state.pop(_k, None)
+        st.session_state.pop("editor_checklist_v14", None)
         st.rerun()
 
 with atalho_cols[1]:
@@ -462,9 +463,7 @@ with atalho_cols[1]:
             st.session_state["faixas_sel_v121"] = []
         else:
             st.session_state["faixas_sel_v121"] = faixas_risco
-        for _k in list(st.session_state.keys()):
-            if str(_k).startswith("editor_checklist_v14"):
-                st.session_state.pop(_k, None)
+        st.session_state.pop("editor_checklist_v14", None)
         st.rerun()
 
 with atalho_cols[2]:
@@ -472,9 +471,7 @@ with atalho_cols[2]:
         st.session_state["faixas_sel_v121"] = []
         st.session_state["busca_v121"] = ""
         st.session_state["nao_cobrados_v121"] = False
-        for _k in list(st.session_state.keys()):
-            if str(_k).startswith("editor_checklist_v14"):
-                st.session_state.pop(_k, None)
+        st.session_state.pop("editor_checklist_v14", None)
         for _cliente in df["Cliente"].astype(str).unique():
             st.session_state["status_manual_v121"][_cliente] = "Não cobrado"
         st.rerun()
@@ -493,9 +490,7 @@ for i, (nome, _ini, _fim, legenda, acao) in enumerate(FAIXAS):
             else:
                 selecionadas.append(nome)
             st.session_state["faixas_sel_v121"] = selecionadas
-            for _k in list(st.session_state.keys()):
-            if str(_k).startswith("editor_checklist_v14"):
-                st.session_state.pop(_k, None)
+            st.session_state.pop("editor_checklist_v14", None)
             st.rerun()
         st.markdown(f'<div class="legend-mini">{legenda}</div>', unsafe_allow_html=True)
 
@@ -537,7 +532,7 @@ with left:
     checklist_view["Faixa_Principal"] = checklist_view["Faixa_Principal"].map(lambda x: FAIXA_DISPLAY.get(x, x))
 
     checklist_clientes_key = "_".join(checklist_view["Cliente"].astype(str).tolist())
-    editor_key = f"editor_checklist_v142_{abs(hash(checklist_clientes_key))}"
+    editor_key = f"editor_checklist_v143_{abs(hash(checklist_clientes_key))}"
 
     edited = st.data_editor(
         checklist_view,
@@ -562,10 +557,7 @@ with left:
 
     if edited is not None and "Situação Manual" in edited.columns:
         for _, row in edited.iterrows():
-            cliente_id = str(row["Cliente"])
-            novo_status = row["Situação Manual"]
-            if cliente_id in st.session_state["status_manual_v121"]:
-                st.session_state["status_manual_v121"][cliente_id] = novo_status
+            st.session_state["status_manual_v121"][str(row["Cliente"])] = row["Situação Manual"]
 
     filtrado["Situação Manual"] = filtrado["Cliente"].astype(str).map(st.session_state["status_manual_v121"])
 

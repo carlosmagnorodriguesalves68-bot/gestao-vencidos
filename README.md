@@ -1,1 +1,1 @@
-V14.2 - restaura autosize do checklist e melhora a estabilidade da Situação Manual.
+V14.3 - ajuste fino com autosize e correção da Situação Manual sem erro de indentação.
