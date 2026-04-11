@@ -1,1 +1,1 @@
-V12.7 - quadro mensagem bem menor
+V12.8 - modo ultra compacto da mensagem, sem alterar conteúdo

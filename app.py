@@ -341,13 +341,15 @@ div[data-testid="stHorizontalBlock"] .stButton > button {
 
 st.markdown("""
 <style>
-/* DIMINUI FORTE O QUADRO DE MENSAGEM */
-div[data-testid="stCodeBlock"] pre, div[data-testid="stCodeBlock"] code {
-    font-size: 9px !important;
-    line-height: 1.1 !important;
+/* MODO ULTRA COMPACTO DO QUADRO DE MENSAGEM, SEM ALTERAR CONTEÚDO */
+div[data-testid="stCodeBlock"] pre,
+div[data-testid="stCodeBlock"] code {
+    font-size: 8px !important;
+    line-height: 1.05 !important;
 }
 div[data-testid="stCodeBlock"] {
-    max-height: 180px !important;
+    max-height: 145px !important;
+    min-height: 145px !important;
     overflow-y: auto !important;
 }
 </style>
