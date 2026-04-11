@@ -1,1 +1,1 @@
-V13.9 - adiciona 3 atalhos grandes: Clientes bloqueados, Risco de bloquear (avisar) e Limpar filtros; remove botão antigo de limpar.
+V14.1 - reforço visual das faixas no checklist com identificação colorida semelhante à Lista detalhada.
