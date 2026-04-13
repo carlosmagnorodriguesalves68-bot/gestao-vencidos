@@ -562,7 +562,7 @@ with left:
     filtrado["Situação Manual"] = filtrado["Cliente"].astype(str).map(st.session_state["status_manual_v121"])
 
 with right:
-    st.markdown("### Mensagem pronta para enviar")
+    st.markdown("### Assistente de Cobrança")
     clientes_msg = filtrado_clientes.sort_values(["Maior_Dias", "Valor_total"], ascending=[False, False]).copy()
     if len(clientes_msg) == 0:
         st.info("Nenhum cliente disponível.")
