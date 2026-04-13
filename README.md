@@ -1,1 +1,1 @@
-V14.3 - ajuste fino com autosize e correção da Situação Manual sem erro de indentação.
+V14.7 - versão limpa e completa
