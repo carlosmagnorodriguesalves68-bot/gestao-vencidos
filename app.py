@@ -7,10 +7,10 @@ import streamlit as st
 st.set_page_config(page_title="Cobrança Inteligente", layout="wide")
 
 FAIXAS = [
-    ("Recuperação de Perda", 31, 999999, "+30d", "Negociar"),
+    ("Recuperação de Perda", 31, 999999, "+30d", "Prejuízo"),
     ("Protesto Iminente", 12, 30, "12–30d", "Urgente"),
     ("Radar de Perda", 9, 11, "9–11d", "Priorizar"),
-    ("Bloqueio", 5, 8, "5–8d", "Bloqueado"),
+    ("Bloqueio", 5, 8, "5–8d", "Cobrar agora"),
     ("Risco", 3, 4, "3–4d", "Avisar"),
     ("Aguardando Baixa", -999999, 2, "0–2d", "Sem ação"),
 ]
@@ -33,6 +33,16 @@ ICONES = {
     "Aguardando Baixa": "⚪",
 }
 
+FAIXA_DISPLAY = {
+    "Recuperação de Perda": "⚫ Recuperação de Perda",
+    "Protesto Iminente": "🔴 Protesto Iminente",
+    "Radar de Perda": "🟡 Radar de Perda",
+    "Bloqueio": "🟠 Bloqueio",
+    "Risco": "🔵 Risco",
+    "Aguardando Baixa": "⚪ Aguardando Baixa",
+}
+
+
 SITUACOES_MANUAIS = ["Não cobrado", "Cobrado hoje", "Aguardando retorno", "Resolvido"]
 
 COLUNAS_DESEJADAS = {
@@ -50,19 +60,16 @@ COLUNAS_DESEJADAS = {
     "Montante": "Montante",
 }
 
-
 def moeda_br(v):
     try:
         return f"R$ {float(v):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     except Exception:
         return "R$ 0,00"
 
-
 def normalizar_texto(x):
     if pd.isna(x):
         return ""
     return str(x).replace("\n", " ").replace("\r", " ").strip()
-
 
 def converter_valor_brasileiro(valor):
     if pd.isna(valor):
@@ -84,10 +91,8 @@ def converter_valor_brasileiro(valor):
     except Exception:
         return None
 
-
 def converter_montante(serie):
     return serie.apply(converter_valor_brasileiro)
-
 
 def ler_csv_bruto(uploaded_file):
     raw = uploaded_file.getvalue()
@@ -112,7 +117,6 @@ def ler_csv_bruto(uploaded_file):
             ultimo_erro = e
     raise ValueError(f"Não consegui ler o CSV. {ultimo_erro}")
 
-
 def achar_cabecalho(bruto):
     for i in range(min(40, len(bruto))):
         linha_bruta = bruto.iloc[i]
@@ -128,7 +132,6 @@ def achar_cabecalho(bruto):
         ):
             return i
     return None
-
 
 def ler_arquivo(uploaded_file):
     nome = uploaded_file.name.lower()
@@ -173,13 +176,11 @@ def ler_arquivo(uploaded_file):
     df = df.dropna(subset=["Venc Liq", "Montante"]).copy()
     return df, origem, header_idx + 1
 
-
 def faixa_por_dias(dias):
     for nome, ini, fim, _leg, _acao in FAIXAS:
         if ini <= dias <= fim:
             return nome
     return "Aguardando Baixa"
-
 
 def gerar_linhas_titulos(df_cliente):
     linhas = []
@@ -189,55 +190,76 @@ def gerar_linhas_titulos(df_cliente):
         )
     return "\n".join(linhas)
 
-
 def gerar_mensagem_cliente(df_cliente):
     faixa = df_cliente["Faixa"].iloc[0]
-    nome = df_cliente["Nome"].iloc[0]
     titulos = gerar_linhas_titulos(df_cliente)
     valor_total = moeda_br(df_cliente["Montante"].sum())
-    base = f"Olá, tudo bem? {nome},\n\n"
 
-    if faixa == "Bloqueio":
-        return f"""{base}Seu cadastro encontra-se bloqueado devido aos títulos em aberto abaixo:
+    if faixa == "Recuperação de Perda":
+        return f"""Olá, tudo bem?
+
+Identificamos títulos em aberto há mais tempo em seu cadastro:
 
 {titulos}
 
 Valor total: {valor_total}.
 
-Para liberação do sistema, é necessário realizar a regularização.
+Precisamos tratar essa pendência o quanto antes.
+Consegue nos informar uma previsão de regularização?
+
+Caso necessário, podemos avaliar a melhor forma de negociação."""
+    elif faixa == "Protesto Iminente":
+        return f"""Olá, tudo bem?
+
+Identificamos títulos em aberto:
+
+{titulos}
+
+Valor total: {valor_total}.
+
+Esses títulos já estão próximos de medidas administrativas.
+É importante verificarmos uma posição o quanto antes.
 
 Fico no aguardo do seu retorno."""
-    if faixa == "Protesto Iminente":
-        return f"""{base}Identificamos títulos em aberto em seu cadastro:
+    elif faixa == "Radar de Perda":
+        return f"""Olá, tudo bem?
+
+Você possui os seguintes títulos em aberto:
 
 {titulos}
 
 Valor total: {valor_total}.
 
-Esses títulos estão próximos de medidas administrativas, sendo importante a regularização com urgência.
-
-Aguardamos sua posição."""
-    if faixa == "Risco":
-        return f"""{base}Identificamos títulos recentes em aberto:
-
-{titulos}
-
-Valor total: {valor_total}.
-
-Caso não haja regularização, o cadastro poderá ser bloqueado em breve.
-
-Se o pagamento já estiver em andamento, pode desconsiderar."""
-    if faixa in ["Radar de Perda", "Recuperação de Perda"]:
-        return f"""{base}Identificamos títulos em aberto em seu cadastro:
-
-{titulos}
-
-Valor total: {valor_total}.
-
-Estamos à disposição para alinharmos a melhor forma de regularização.
-
+Ainda estamos dentro do prazo de regularização sem maiores impactos.
 Consegue nos informar uma previsão?"""
-    return f"""{base}Identificamos títulos recentes em aberto:
+    elif faixa == "Bloqueio":
+        return f"""Olá, tudo bem?
+
+Seu cadastro encontra-se bloqueado devido aos títulos em aberto abaixo:
+
+{titulos}
+
+Valor total: {valor_total}.
+
+Assim que houver a regularização, conseguimos seguir com a liberação normalmente.
+
+Fico no aguardo do seu retorno."""
+    elif faixa == "Risco":
+        return f"""Olá, tudo bem?
+
+Identificamos títulos recentes em aberto:
+
+{titulos}
+
+Valor total: {valor_total}.
+
+Estamos entrando em contato de forma preventiva para evitar qualquer tipo de bloqueio.
+
+Se o pagamento já foi realizado, pode desconsiderar."""
+    else:
+        return f"""Olá, tudo bem?
+
+Identificamos títulos recentes em aberto:
 
 {titulos}
 
@@ -245,12 +267,10 @@ Valor total: {valor_total}.
 
 Caso o pagamento já tenha sido realizado, pode desconsiderar esta mensagem.
 
-Fico à disposição."""
-
+Se precisar de algo, estou à disposição."""
 
 def safe_cols(df, cols):
     return [c for c in cols if c in df.columns]
-
 
 def estilo_linhas(df):
     styles = pd.DataFrame("", index=df.index, columns=df.columns)
@@ -262,17 +282,15 @@ def estilo_linhas(df):
             styles.loc[idx, :] = f"background-color: {cfg['bg']};"
     return styles
 
-
 def estilo_faixa(valor):
     cfg = FAIXA_CORES.get(valor, {"bg": "#ffffff", "text": "#222222"})
     return f"background-color: {cfg['bg']}; color: {cfg['text']}; font-weight: 800;"
 
-
 st.markdown("""
 <style>
 .stApp { background: #f5f7fb; }
-.block-container { padding-top: 1.4rem; padding-bottom: 1.2rem; max-width: 1520px; }
-div[data-testid="stHorizontalBlock"] { gap: 0.50rem; }
+.block-container { padding-top: 1.5rem; padding-bottom: 1.2rem; max-width: 1500px; }
+div[data-testid="stHorizontalBlock"] { gap: 0.45rem; }
 
 .header-title {
     font-size: 28px;
@@ -327,27 +345,51 @@ div[data-testid="stHorizontalBlock"] .stButton > button {
     font-size: 11px !important;
     padding: 2px 6px !important;
 }
-div[data-testid="stCodeBlock"] pre, div[data-testid="stCodeBlock"] code {
+
+/* Atalhos grandes no topo */
+div[data-testid="stHorizontalBlock"] .stButton > button {
+    min-height: 56px;
+}
+button[kind="secondary"], button[kind="primary"] {
+    border-radius: 14px !important;
+}
+
+
+/* ajuste discreto checklist */
+[data-testid="stDataEditor"] [role="columnheader"] { font-size: 12px !important; }
+[data-testid="stDataEditor"] [role="gridcell"] { font-size: 12px !important; }
+[data-testid="stDataEditor"] [role="gridcell"] p { font-weight: 500 !important; }
+
+
+[data-testid="stDataEditor"] [role="columnheader"] { font-size: 12px !important; }
+[data-testid="stDataEditor"] [role="gridcell"] { font-size: 12px !important; }
+</style>
+""", unsafe_allow_html=True)
+
+
+st.markdown("""
+<style>
+div[data-testid="stCodeBlock"] pre,
+div[data-testid="stCodeBlock"] code {
     font-size: 10px !important;
     line-height: 1.15 !important;
-    white-space: pre-wrap !important;
-    word-break: break-word !important;
 }
 div[data-testid="stCodeBlock"] {
-    max-width: 100% !important;
-    overflow-x: auto !important;
+    max-height: 180px !important;
+    min-height: 180px !important;
+    overflow-y: auto !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
-if "faixas_sel_v147" not in st.session_state:
-    st.session_state["faixas_sel_v147"] = []
-if "status_manual_v147" not in st.session_state:
-    st.session_state["status_manual_v147"] = {}
-if "busca_v147" not in st.session_state:
-    st.session_state["busca_v147"] = ""
-if "nao_cobrados_v147" not in st.session_state:
-    st.session_state["nao_cobrados_v147"] = False
+if "faixas_sel_v121" not in st.session_state:
+    st.session_state["faixas_sel_v121"] = []
+if "status_manual_v121" not in st.session_state:
+    st.session_state["status_manual_v121"] = {}
+if "busca_v121" not in st.session_state:
+    st.session_state["busca_v121"] = ""
+if "nao_cobrados_v121" not in st.session_state:
+    st.session_state["nao_cobrados_v121"] = False
 
 st.markdown('<div class="header-title">🧾 Cobrança Inteligente</div>', unsafe_allow_html=True)
 st.markdown('<div class="header-sub">Veja. Decida. Cobre.</div>', unsafe_allow_html=True)
@@ -358,22 +400,14 @@ with c1:
 with c2:
     data_ref = st.date_input("Data", value=date.today(), format="DD/MM/YYYY", label_visibility="collapsed")
 with c3:
-    busca = st.text_input("Buscar cliente", value=st.session_state["busca_v147"], placeholder="Buscar cliente", label_visibility="collapsed")
+    busca = st.text_input("Buscar cliente", value=st.session_state["busca_v121"], placeholder="Buscar cliente", label_visibility="collapsed")
 with c4:
-    nao_cobrados = st.checkbox("Não cobrados", value=st.session_state["nao_cobrados_v147"])
+    nao_cobrados = st.checkbox("Não cobrados", value=st.session_state["nao_cobrados_v121"])
 with c5:
-    st.markdown('<div class="small-clear">', unsafe_allow_html=True)
-    limpar = st.button("Limpar", use_container_width=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.write("")
 
-if limpar:
-    st.session_state["faixas_sel_v147"] = []
-    st.session_state["busca_v147"] = ""
-    st.session_state["nao_cobrados_v147"] = False
-    st.rerun()
-
-st.session_state["busca_v147"] = busca
-st.session_state["nao_cobrados_v147"] = nao_cobrados
+st.session_state["busca_v121"] = busca
+st.session_state["nao_cobrados_v121"] = nao_cobrados
 
 if arquivo is None:
     st.info("Envie o arquivo para começar.")
@@ -390,10 +424,10 @@ df["Dias"] = (pd.to_datetime(data_ref) - df["Venc Liq"]).dt.days.astype(int)
 df["Faixa"] = df["Dias"].apply(faixa_por_dias)
 
 for cliente in df["Cliente"].astype(str).unique():
-    if cliente not in st.session_state["status_manual_v147"]:
-        st.session_state["status_manual_v147"][cliente] = "Não cobrado"
+    if cliente not in st.session_state["status_manual_v121"]:
+        st.session_state["status_manual_v121"][cliente] = "Não cobrado"
 
-df["Situação Manual"] = df["Cliente"].astype(str).map(st.session_state["status_manual_v147"])
+df["Situação Manual"] = df["Cliente"].astype(str).map(st.session_state["status_manual_v121"])
 
 clientes_df = (
     df.groupby(["Cliente", "Nome"], as_index=False)
@@ -405,28 +439,67 @@ clientes_df = (
       )
 )
 clientes_df["Faixa_Principal"] = clientes_df["Maior_Dias"].apply(faixa_por_dias)
-clientes_df["Situação Manual"] = clientes_df["Cliente"].astype(str).map(st.session_state["status_manual_v147"])
+clientes_df["Situação Manual"] = clientes_df["Cliente"].astype(str).map(st.session_state["status_manual_v121"])
 
 st.markdown('<div class="small-muted">👉 Escolha onde focar agora</div>', unsafe_allow_html=True)
+
+atalho_cols = st.columns(3)
+with atalho_cols[0]:
+    if st.button("Clientes bloqueados", key="atalho_clientes_bloqueados", use_container_width=True):
+        faixas_bloqueados = ["Protesto Iminente", "Radar de Perda", "Bloqueio"]
+        atuais = list(st.session_state["faixas_sel_v121"])
+        if set(atuais) == set(faixas_bloqueados):
+            st.session_state["faixas_sel_v121"] = []
+        else:
+            st.session_state["faixas_sel_v121"] = faixas_bloqueados
+        st.session_state.pop("editor_checklist_v14", None)
+        st.rerun()
+
+with atalho_cols[1]:
+    if st.button("Risco de bloquear (avisar)", key="atalho_risco_bloquear", use_container_width=True):
+        faixas_risco = ["Risco"]
+        atuais = list(st.session_state["faixas_sel_v121"])
+        if set(atuais) == set(faixas_risco):
+            st.session_state["faixas_sel_v121"] = []
+        else:
+            st.session_state["faixas_sel_v121"] = faixas_risco
+        st.session_state.pop("editor_checklist_v14", None)
+        st.rerun()
+
+with atalho_cols[2]:
+    if st.button("Limpar filtros", key="atalho_limpar_filtros_topo", use_container_width=True):
+        st.session_state["faixas_sel_v121"] = []
+        st.session_state["busca_v121"] = ""
+        st.session_state["nao_cobrados_v121"] = False
+        st.session_state.pop("editor_checklist_v14", None)
+        for _cliente in df["Cliente"].astype(str).unique():
+            st.session_state["status_manual_v121"][_cliente] = "Não cobrado"
+        st.rerun()
 
 btn_cols = st.columns(6)
 for i, (nome, _ini, _fim, legenda, acao) in enumerate(FAIXAS):
     qtd = clientes_df[clientes_df["Faixa_Principal"] == nome]["Cliente"].nunique()
-    ativo = nome in st.session_state["faixas_sel_v147"]
+    ativo = nome in st.session_state["faixas_sel_v121"]
     label = f"{ICONES[nome]} {nome}\n{qtd} clientes\n{acao}"
+
     with btn_cols[i]:
         if st.button(label, key=f"faixa_{i}_{nome}", type="primary" if ativo else "secondary", use_container_width=True):
-            selecionadas = list(st.session_state["faixas_sel_v147"])
+            selecionadas = list(st.session_state["faixas_sel_v121"])
             if nome in selecionadas:
                 selecionadas.remove(nome)
             else:
                 selecionadas.append(nome)
-            st.session_state["faixas_sel_v147"] = selecionadas
+            st.session_state["faixas_sel_v121"] = selecionadas
+            st.session_state.pop("editor_checklist_v14", None)
             st.rerun()
         st.markdown(f'<div class="legend-mini">{legenda}</div>', unsafe_allow_html=True)
 
-faixas_ativas = st.session_state["faixas_sel_v147"]
-filtrado_clientes = clientes_df[clientes_df["Faixa_Principal"].isin(faixas_ativas)].copy() if faixas_ativas else clientes_df.copy()
+faixas_ativas = st.session_state["faixas_sel_v121"]
+
+if faixas_ativas:
+    filtrado_clientes = clientes_df[clientes_df["Faixa_Principal"].isin(faixas_ativas)].copy()
+else:
+    filtrado_clientes = clientes_df.copy()
 
 if busca:
     mask = (
@@ -449,38 +522,47 @@ with m2:
 with m3:
     st.markdown(f'<div class="metric-card"><div class="metric-label">Valor total</div><div class="metric-value">{moeda_br(filtrado["Montante"].sum())}</div></div>', unsafe_allow_html=True)
 
-left, right = st.columns([6.5, 3.5])
+left, right = st.columns([3, 1])
 
 with left:
     st.markdown("### Checklist de cobrança")
     checklist = filtrado_clientes.sort_values(["Maior_Dias", "Valor_total"], ascending=[False, False]).copy()
     checklist_view = checklist[["Cliente", "Nome", "Qtd_Titulos", "Valor_total", "Maior_Dias", "Faixa_Principal", "Situação Manual"]].copy()
     checklist_view["Valor_total"] = checklist_view["Valor_total"].map(moeda_br)
+    checklist_view["Faixa_Principal"] = checklist_view["Faixa_Principal"].map(lambda x: FAIXA_DISPLAY.get(x, x))
+
+    checklist_clientes_key = "_".join(checklist_view["Cliente"].astype(str).tolist())
+    editor_key = f"editor_checklist_v143_{abs(hash(checklist_clientes_key))}"
 
     edited = st.data_editor(
         checklist_view,
         hide_index=True,
         use_container_width=True,
         num_rows="fixed",
-        height=380,
+        height=360,
         disabled=["Cliente", "Nome", "Qtd_Titulos", "Valor_total", "Maior_Dias", "Faixa_Principal"],
         column_config={
             "Qtd_Titulos": st.column_config.NumberColumn("Qtd. títulos"),
             "Valor_total": st.column_config.TextColumn("Montante total"),
             "Maior_Dias": st.column_config.NumberColumn("Maior atraso"),
             "Faixa_Principal": st.column_config.TextColumn("Faixa"),
-            "Situação Manual": st.column_config.SelectboxColumn("Situação Manual", options=SITUACOES_MANUAIS, required=True),
+            "Situação Manual": st.column_config.SelectboxColumn(
+                "Situação Manual",
+                options=SITUACOES_MANUAIS,
+                required=True,
+            ),
         },
-        key="editor_checklist_v147"
+        key=editor_key
     )
 
-    for _, row in edited.iterrows():
-        st.session_state["status_manual_v147"][str(row["Cliente"])] = row["Situação Manual"]
+    if edited is not None and "Situação Manual" in edited.columns:
+        for _, row in edited.iterrows():
+            st.session_state["status_manual_v121"][str(row["Cliente"])] = row["Situação Manual"]
 
-    filtrado["Situação Manual"] = filtrado["Cliente"].astype(str).map(st.session_state["status_manual_v147"])
+    filtrado["Situação Manual"] = filtrado["Cliente"].astype(str).map(st.session_state["status_manual_v121"])
 
 with right:
-    st.markdown("### Assistente de Cobrança")
+    st.markdown("### Mensagem pronta para enviar")
     clientes_msg = filtrado_clientes.sort_values(["Maior_Dias", "Valor_total"], ascending=[False, False]).copy()
     if len(clientes_msg) == 0:
         st.info("Nenhum cliente disponível.")
@@ -489,14 +571,21 @@ with right:
             lambda r: f"{r['Cliente']} - {r['Nome']} | {r['Qtd_Titulos']} título(s) | {moeda_br(r['Valor_total'])}",
             axis=1
         )
-        idx = st.selectbox("Selecione o cliente", options=clientes_msg.index.tolist(), format_func=lambda i: clientes_msg.loc[i, "descricao"])
+        idx = st.selectbox(
+            "Selecione o cliente",
+            options=clientes_msg.index.tolist(),
+            format_func=lambda i: clientes_msg.loc[i, "descricao"]
+        )
         cliente_sel = str(clientes_msg.loc[idx, "Cliente"])
         df_cliente = filtrado[filtrado["Cliente"].astype(str) == cliente_sel].copy()
         st.code(gerar_mensagem_cliente(df_cliente), language=None)
         st.caption("Copie e envie no WhatsApp.")
 
 st.markdown("### Lista detalhada")
-colunas_finais = safe_cols(filtrado, ["Cliente", "Nome", "N doc", "Referência", "Tipo", "Data Doc", "Venc Liq", "Montante", "Dias", "Faixa", "Situação Manual"])
+colunas_finais = safe_cols(
+    filtrado,
+    ["Cliente", "Nome", "N doc", "Referência", "Tipo", "Data Doc", "Venc Liq", "Montante", "Dias", "Faixa", "Situação Manual"]
+)
 mostrar = filtrado[colunas_finais].copy()
 
 if "Data Doc" in mostrar.columns:
