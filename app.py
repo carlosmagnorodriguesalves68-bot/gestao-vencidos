@@ -392,6 +392,58 @@ div[data-testid="stMetric"] {
     background: #ffffff;
 }
 
+
+/* === V15.5 - compactação do painel superior e botões === */
+.block-container { padding-top: 0.7rem !important; }
+div[data-testid="stHorizontalBlock"] { gap: 0.25rem !important; }
+
+/* botões menores */
+div[data-testid="stHorizontalBlock"] .stButton > button {
+    min-height: 36px !important;
+    height: auto !important;
+    padding: 3px 5px !important;
+    font-size: 10px !important;
+    line-height: 1.05 !important;
+    border-radius: 9px !important;
+}
+
+/* legenda das faixas menor */
+.legend-mini {
+    font-size: 8px !important;
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+    line-height: 1 !important;
+}
+
+/* reduzir títulos e textos do quadro superior */
+.small-muted {
+    font-size: 10px !important;
+    margin: 0 !important;
+}
+
+/* cards de indicadores mais baixos */
+.metric-card {
+    padding: 8px 10px !important;
+    border-radius: 12px !important;
+}
+.metric-label {
+    font-size: 10px !important;
+    margin-bottom: 2px !important;
+}
+.metric-value {
+    font-size: 20px !important;
+}
+
+/* reduzir espaço vertical entre blocos */
+.element-container {
+    margin-bottom: 0.15rem !important;
+}
+
+/* checkbox menor */
+.stCheckbox label {
+    font-size: 11px !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -496,7 +548,7 @@ st.markdown('<div class="small-muted">👉 Escolha onde focar agora</div>', unsa
 
 atalho_cols = st.columns(3)
 with atalho_cols[0]:
-    if st.button("Clientes bloqueados", key="atalho_clientes_bloqueados", use_container_width=True):
+    if st.button("Bloqueados", key="atalho_clientes_bloqueados", use_container_width=True):
         faixas_bloqueados = ["Protesto Iminente", "Radar de Perda", "Bloqueio"]
         atuais = list(st.session_state["faixas_sel_v121"])
         if set(atuais) == set(faixas_bloqueados):
@@ -507,7 +559,7 @@ with atalho_cols[0]:
         st.rerun()
 
 with atalho_cols[1]:
-    if st.button("Risco de bloquear (avisar)", key="atalho_risco_bloquear", use_container_width=True):
+    if st.button("Risco bloquear", key="atalho_risco_bloquear", use_container_width=True):
         faixas_risco = ["Risco"]
         atuais = list(st.session_state["faixas_sel_v121"])
         if set(atuais) == set(faixas_risco):
@@ -518,7 +570,7 @@ with atalho_cols[1]:
         st.rerun()
 
 with atalho_cols[2]:
-    if st.button("Limpar filtros", key="atalho_limpar_filtros_topo", use_container_width=True):
+    if st.button("Limpar", key="atalho_limpar_filtros_topo", use_container_width=True):
         st.session_state["faixas_sel_v121"] = []
         st.session_state["busca_v121"] = ""
         st.session_state["nao_cobrados_v121"] = False
@@ -531,7 +583,15 @@ btn_cols = st.columns(6)
 for i, (nome, _ini, _fim, legenda, acao) in enumerate(FAIXAS):
     qtd = clientes_df[clientes_df["Faixa_Principal"] == nome]["Cliente"].nunique()
     ativo = nome in st.session_state["faixas_sel_v121"]
-    label = f"{ICONES[nome]} {nome}\n{qtd} clientes\n{acao}"
+    nome_curto = {
+        "Recuperação de Perda": "Recuperação",
+        "Protesto Iminente": "Protesto",
+        "Radar de Perda": "Radar",
+        "Bloqueio": "Bloqueio",
+        "Risco": "Risco",
+        "Aguardando Baixa": "Baixa",
+    }.get(nome, nome)
+    label = f"{ICONES[nome]} {nome_curto}\n{qtd} clientes\n{acao}"
 
     with btn_cols[i]:
         if st.button(label, key=f"faixa_{i}_{nome}", type="primary" if ativo else "secondary", use_container_width=True):

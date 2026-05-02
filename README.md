@@ -1,7 +1,3 @@
-Cobrança Inteligente V15.2
+Cobrança Inteligente V15.5
 
-Melhorias visuais profissionais sem alterar a funcionalidade:
-- cabeçalho em bloco profissional
-- ícones nas seções principais
-- ajustes leves de espaçamento, bordas e sombra
-- layout e lógica preservados
+Ajuste visual: quadro superior e botões mais compactos, sem alteração de lógica ou funcionalidade.
