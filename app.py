@@ -58,6 +58,13 @@ COLUNAS_DESEJADAS = {
     "Venc.Liq.": "Venc Liq",
     "Venc Liq": "Venc Liq",
     "Montante": "Montante",
+    "Local": "Local",
+    "LOCAL": "Local",
+    "local": "Local",
+    "Localidade": "Local",
+    "LOCALIDADE": "Local",
+    "Cidade": "Local",
+    "CIDADE": "Local",
 }
 
 def moeda_br(v):
@@ -169,6 +176,9 @@ def ler_arquivo(uploaded_file):
     for col in ["Cliente", "Nome", "N doc", "Referência", "Tipo"]:
         df[col] = df[col].map(normalizar_texto)
 
+    if "Local" in df.columns:
+        df["Local"] = df["Local"].map(normalizar_texto)
+
     df = df[df["Cliente"] != ""].copy()
     df["Data Doc"] = pd.to_datetime(df["Data Doc"], dayfirst=True, errors="coerce")
     df["Venc Liq"] = pd.to_datetime(df["Venc Liq"], dayfirst=True, errors="coerce")
@@ -186,7 +196,7 @@ def gerar_linhas_titulos(df_cliente):
     linhas = []
     for _, row in df_cliente.sort_values(["Venc Liq", "Montante"], ascending=[True, False]).iterrows():
         linhas.append(
-            f"- Título {row['N doc']} | Vencimento {row['Venc Liq'].strftime('%d/%m/%Y')} | Valor {moeda_br(row['Montante'])}"
+            f"- Referência {row.get('Referência', row.get('N doc', ''))} | Vencimento {row['Venc Liq'].strftime('%d/%m/%Y')} | Valor {moeda_br(row['Montante'])}"
         )
     return "\n".join(linhas)
 
@@ -390,6 +400,10 @@ if "busca_v121" not in st.session_state:
     st.session_state["busca_v121"] = ""
 if "nao_cobrados_v121" not in st.session_state:
     st.session_state["nao_cobrados_v121"] = False
+if "local_v149" not in st.session_state:
+    st.session_state["local_v149"] = "Todos"
+if "ocultar_fds_v149" not in st.session_state:
+    st.session_state["ocultar_fds_v149"] = False
 
 st.markdown('<div class="header-title">🧾 Cobrança Inteligente</div>', unsafe_allow_html=True)
 st.markdown('<div class="header-sub">Veja. Decida. Cobre.</div>', unsafe_allow_html=True)
@@ -422,6 +436,45 @@ except Exception as e:
 df = base_df.copy()
 df["Dias"] = (pd.to_datetime(data_ref) - df["Venc Liq"]).dt.days.astype(int)
 df["Faixa"] = df["Dias"].apply(faixa_por_dias)
+
+# Filtros adicionais compactos: Local e vencimentos em fim de semana
+filtro_local = "Todos"
+ocultar_fds = False
+
+if "Local" in df.columns:
+    locais_disponiveis = ["Todos"] + sorted([x for x in df["Local"].dropna().astype(str).unique().tolist() if x.strip() != ""])
+    if st.session_state.get("local_v149", "Todos") not in locais_disponiveis:
+        st.session_state["local_v149"] = "Todos"
+
+    f_local_col, f_fds_col, _f_space = st.columns([1.2, 0.9, 3.0])
+    with f_local_col:
+        filtro_local = st.selectbox(
+            "Local",
+            options=locais_disponiveis,
+            index=locais_disponiveis.index(st.session_state["local_v149"]),
+            key="local_v149"
+        )
+    with f_fds_col:
+        ocultar_fds = st.checkbox(
+            "Ocultar Sáb/Dom",
+            value=st.session_state.get("ocultar_fds_v149", False),
+            key="ocultar_fds_v149"
+        )
+else:
+    _f_fds_col, _f_space = st.columns([0.9, 4.2])
+    with _f_fds_col:
+        ocultar_fds = st.checkbox(
+            "Ocultar Sáb/Dom",
+            value=st.session_state.get("ocultar_fds_v149", False),
+            key="ocultar_fds_v149"
+        )
+
+if "Local" in df.columns and filtro_local != "Todos":
+    df = df[df["Local"].astype(str) == str(filtro_local)].copy()
+
+if ocultar_fds:
+    df = df[~df["Venc Liq"].dt.weekday.isin([5, 6])].copy()
+
 
 for cliente in df["Cliente"].astype(str).unique():
     if cliente not in st.session_state["status_manual_v121"]:
@@ -584,7 +637,7 @@ with right:
 st.markdown("### Lista detalhada")
 colunas_finais = safe_cols(
     filtrado,
-    ["Cliente", "Nome", "N doc", "Referência", "Tipo", "Data Doc", "Venc Liq", "Montante", "Dias", "Faixa", "Situação Manual"]
+    ["Cliente", "Nome", "Local", "N doc", "Referência", "Tipo", "Data Doc", "Venc Liq", "Montante", "Dias", "Faixa", "Situação Manual"]
 )
 mostrar = filtrado[colunas_finais].copy()
 

@@ -1,1 +1,3 @@
-V14.3 - ajuste fino com autosize e correção da Situação Manual sem erro de indentação.
+Cobrança Inteligente V14.9
+
+Ajustes: filtro por Local, opção Ocultar Sáb/Dom e Assistente de Cobrança exibindo Referência no lugar de N doc.
