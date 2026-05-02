@@ -364,6 +364,34 @@ button[kind="secondary"], button[kind="primary"] {
 
 [data-testid="stDataEditor"] [role="columnheader"] { font-size: 12px !important; }
 [data-testid="stDataEditor"] [role="gridcell"] { font-size: 12px !important; }
+
+/* === Ajustes profissionais V15.2 - somente visual === */
+.app-header-box {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+.header-title {
+    font-size: 27px !important;
+    letter-spacing: -0.3px;
+}
+.header-sub {
+    font-size: 13px !important;
+}
+section[data-testid="stSidebar"] { display: none; }
+.stButton > button {
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+.stButton > button:hover {
+    border-color: #94a3b8 !important;
+}
+div[data-testid="stMetric"] {
+    background: #ffffff;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -396,8 +424,12 @@ if "local_v149" not in st.session_state:
 if "ocultar_fds_v149" not in st.session_state:
     st.session_state["ocultar_fds_v149"] = False
 
-st.markdown('<div class="header-title">🧾 Cobrança Inteligente</div>', unsafe_allow_html=True)
-st.markdown('<div class="header-sub">Veja. Decida. Cobre.</div>', unsafe_allow_html=True)
+st.markdown('''
+<div class="app-header-box">
+    <div class="header-title">🧾 Cobrança Inteligente</div>
+    <div class="header-sub">Veja. Decida. Cobre.</div>
+</div>
+''', unsafe_allow_html=True)
 
 c1, c2, c3, c4, c5 = st.columns([1.25, 0.8, 1.2, 0.8, 0.55])
 with c1:
@@ -544,7 +576,7 @@ with m3:
 left, right = st.columns([3, 1])
 
 with left:
-    st.markdown("### Checklist de cobrança")
+    st.markdown("### 📋 Checklist de cobrança")
     checklist = filtrado_clientes.sort_values(["Maior_Dias", "Valor_total"], ascending=[False, False]).copy()
     checklist_view = checklist[["Cliente", "Nome", "Qtd_Titulos", "Valor_total", "Maior_Dias", "Faixa_Principal", "Situação Manual"]].copy()
     checklist_view["Valor_total"] = checklist_view["Valor_total"].map(moeda_br)
@@ -581,7 +613,7 @@ with left:
     filtrado["Situação Manual"] = filtrado["Cliente"].astype(str).map(st.session_state["status_manual_v121"])
 
 with right:
-    st.markdown("### Assistente de Cobrança")
+    st.markdown("### 💬 Assistente de Cobrança")
     clientes_msg = filtrado_clientes.sort_values(["Maior_Dias", "Valor_total"], ascending=[False, False]).copy()
     if len(clientes_msg) == 0:
         st.info("Nenhum cliente disponível.")
@@ -600,7 +632,7 @@ with right:
         st.code(gerar_mensagem_cliente(df_cliente), language=None)
         st.caption("Copie e envie no WhatsApp.")
 
-st.markdown("### Lista detalhada")
+st.markdown("### 📊 Lista detalhada")
 colunas_finais = safe_cols(
     filtrado,
     ["Cliente", "Nome", "N doc", "Referência", "Tipo", "Data Doc", "Venc Liq", "Montante", "Dias", "Faixa", "Situação Manual"]
