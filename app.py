@@ -58,13 +58,6 @@ COLUNAS_DESEJADAS = {
     "Venc.Liq.": "Venc Liq",
     "Venc Liq": "Venc Liq",
     "Montante": "Montante",
-    "Local": "Local",
-    "LOCAL": "Local",
-    "local": "Local",
-    "Localidade": "Local",
-    "LOCALIDADE": "Local",
-    "Cidade": "Local",
-    "CIDADE": "Local",
 }
 
 def moeda_br(v):
@@ -176,8 +169,6 @@ def ler_arquivo(uploaded_file):
     for col in ["Cliente", "Nome", "N doc", "Referência", "Tipo"]:
         df[col] = df[col].map(normalizar_texto)
 
-    if "Local" in df.columns:
-        df["Local"] = df["Local"].map(normalizar_texto)
 
     df = df[df["Cliente"] != ""].copy()
     df["Data Doc"] = pd.to_datetime(df["Data Doc"], dayfirst=True, errors="coerce")
@@ -437,40 +428,15 @@ df = base_df.copy()
 df["Dias"] = (pd.to_datetime(data_ref) - df["Venc Liq"]).dt.days.astype(int)
 df["Faixa"] = df["Dias"].apply(faixa_por_dias)
 
-# Filtros adicionais compactos: Local e vencimentos em fim de semana
-filtro_local = "Todos"
-ocultar_fds = False
 
-if "Local" in df.columns:
-    locais_disponiveis = ["Todos"] + sorted([x for x in df["Local"].dropna().astype(str).unique().tolist() if x.strip() != ""])
-    if st.session_state.get("local_v149", "Todos") not in locais_disponiveis:
-        st.session_state["local_v149"] = "Todos"
-
-    f_local_col, f_fds_col, _f_space = st.columns([1.2, 0.9, 3.0])
-    with f_local_col:
-        filtro_local = st.selectbox(
-            "Local",
-            options=locais_disponiveis,
-            index=locais_disponiveis.index(st.session_state["local_v149"]),
-            key="local_v149"
-        )
-    with f_fds_col:
-        ocultar_fds = st.checkbox(
-            "Ocultar Sáb/Dom",
-            value=st.session_state.get("ocultar_fds_v149", False),
-            key="ocultar_fds_v149"
-        )
-else:
-    _f_fds_col, _f_space = st.columns([0.9, 4.2])
-    with _f_fds_col:
-        ocultar_fds = st.checkbox(
-            "Ocultar Sáb/Dom",
-            value=st.session_state.get("ocultar_fds_v149", False),
-            key="ocultar_fds_v149"
-        )
-
-if "Local" in df.columns and filtro_local != "Todos":
-    df = df[df["Local"].astype(str) == str(filtro_local)].copy()
+# Filtro compacto: Ocultar Sáb/Dom
+_fds_col, _space = st.columns([0.9, 4.2])
+with _fds_col:
+    ocultar_fds = st.checkbox(
+        "Ocultar Sáb/Dom",
+        value=st.session_state.get("ocultar_fds_v149", False),
+        key="ocultar_fds_v149"
+    )
 
 if ocultar_fds:
     df = df[~df["Venc Liq"].dt.weekday.isin([5, 6])].copy()
@@ -637,7 +603,7 @@ with right:
 st.markdown("### Lista detalhada")
 colunas_finais = safe_cols(
     filtrado,
-    ["Cliente", "Nome", "Local", "N doc", "Referência", "Tipo", "Data Doc", "Venc Liq", "Montante", "Dias", "Faixa", "Situação Manual"]
+    ["Cliente", "Nome", "N doc", "Referência", "Tipo", "Data Doc", "Venc Liq", "Montante", "Dias", "Faixa", "Situação Manual"]
 )
 mostrar = filtrado[colunas_finais].copy()
 
